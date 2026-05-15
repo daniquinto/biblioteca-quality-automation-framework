@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "database": "biblioteca_mongo",
+  "collections": {
+    "books": {
+      "source": "libros",
+      "primary_key": "id_libro",
+      "fields": {
+        "id_libro": "book_id",
+        "titulo": "title",
+        "fecha_publicacion": "published_at"
+      },
+      "embedded": {
+        "category": {"source": "categorias", "fields": {"nombre": "name", "descripcion": "description"}},
+        "publisher": {"source": "editoriales", "fields": {"nombre": "name"}},
+        "authors": {"source": "autores", "fields": {"nombre": "name"}}
+      }
+    },
+    "users": {
+      "source": "usuarios",
+      "primary_key": "id_usuario",
+      "fields": {"id_usuario": "user_id", "nombre": "name", "correo": "email"}
+    },
+    "loans": {
+      "source": "prestamos",
+      "primary_key": "id_prestamo",
+      "fields": {
+        "id_prestamo": "loan_id",
+        "fecha_salida": "checkout_date",
+        "fecha_devolucion": "return_date",
+        "estado": "status"
+      },
+      "references": {"id_usuario": "user_id", "id_libro": "book_id"}
+    },
+    "inventory": {
+      "source": "inventario",
+      "fields": {"cantidad_total": "total_quantity"},
+      "references": {"id_sede": "branch_id", "id_libro": "book_id"}
+    }
+  }
+}

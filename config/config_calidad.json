@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "objetivo": "Reglas de calidad para validar el script legacy y los datos crudos de biblioteca antes de normalizar.",
+  "sql_static_rules": {
+    "forbidden_keywords": ["DROP DATABASE", "TRUNCATE"],
+    "avoid_text_fields": true,
+    "expected_date_fields": ["fecha_publicacion", "fecha_salida"],
+    "require_primary_keys": true,
+    "require_foreign_keys_after_normalization": true
+  },
+  "tables": {
+    "Biblioteca_Data": {
+      "titulo_libro": {"required": true, "max_length": 255},
+      "autor_nombre": {"required": true, "max_length": 255},
+      "categoria_y_descripcion": {"required": true, "must_contain": "|"},
+      "editorial_info": {"required": true, "max_length": 255},
+      "fecha_publicacion": {"required": true, "type": "date", "max_date": "today"}
+    },
+    "Prestamos_Crudos": {
+      "id_prestamo": {"required": true, "type": "integer"},
+      "nombre_usuario": {"required": true, "max_length": 255},
+      "correo_usuario": {"required": true, "regex": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"},
+      "libros_prestados": {"required": true, "no_empty_items_csv": true},
+      "fecha_salida": {"required": true, "type": "date"},
+      "estado_prestamo": {"required": true, "allowed_values": ["ACTIVO", "DEVUELTO", "VENCIDO"]}
+    },
+    "Inventario_Sedes": {
+      "sede_nombre": {"required": true, "max_length": 100},
+      "ubicacion_sede": {"required": true, "max_length": 255},
+      "libro_asociado": {"required": true, "max_length": 255},
+      "cantidad_total": {"required": true, "type": "integer", "min": 0}
+    },
+    "Reseñas_Usuarios": {
+      "usuario_id": {"required": true, "type": "integer"},
+      "libro_titulo": {"required": true, "max_length": 255},
+      "comentario": {"required": false, "max_length": 1000},
+      "calificacion": {"required": true, "type": "integer", "min": 1, "max": 5}
+    }
+  }
+}
