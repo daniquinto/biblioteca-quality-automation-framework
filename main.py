@@ -59,9 +59,9 @@ def main():
 
     with pg_connection() as conn:
         # Fase 2: Preparación del entorno Legacy. 
-        # Se recrea el estado degradado para demostrar la capacidad de limpieza del framework.
-        logger.info("Creando esquema legacy sin normalizar")
-        execute_sql_file(conn, SQL_DIR / "01_legacy_dirty_schema.sql")
+        # (El esquema legacy se crea automáticamente al iniciar el contenedor PostgreSQL
+        # mediante el script mapeado en /docker-entrypoint-initdb.d/01_legacy_dirty_schema.sql)
+        logger.info("Esquema legacy precargado en el volumen de PostgreSQL")
 
         # Fase 3a: Ingesta de datos reales desde Excel (opcional).
         # Si EXCEL_PATH está definido, se cargan filas reales y sucias antes del Faker,
@@ -158,7 +158,38 @@ def main():
     else:
         logger.info("pylint: análisis completado. Ver %s", pylint_report)
 
-    logger.info("Análisis estático completado. Reportes en logs/")
+    # Fase 9: Unit Testing & Coverage (QA de Código)
+    # Valida que el framework tenga al menos un 80% de cobertura.
+    pytest_report = logs_dir / "pytest_coverage.txt"
+    logger.info("Ejecutando suite de pruebas y validando cobertura (>80%)...")
+    pytest_result = subprocess.run(
+        [
+            "pytest",
+            "tests/",
+            "--cov=src",
+            "--cov-fail-under=80",
+            "--cov-report=term",
+            f"--output={pytest_report}"
+        ],
+        capture_output=True,
+        text=True,
+    )
+    
+    # Escribir el reporte en archivo de forma manual porque pytest --cov-report=term no tiene un --output nativo simple para ambos
+    with open(pytest_report, "w", encoding="utf-8") as f:
+        f.write(pytest_result.stdout)
+        f.write("\n")
+        f.write(pytest_result.stderr)
+
+    if pytest_result.returncode == 0:
+        logger.info("pytest: cobertura validada con éxito. Reporte en %s", pytest_report)
+    else:
+        logger.warning(
+            "pytest: la cobertura no alcanza el 80%% o fallaron pruebas (código %d). Ver %s",
+            pytest_result.returncode, pytest_report,
+        )
+
+    logger.info("Análisis estático y pruebas completados. Reportes en logs/")
 
 if __name__ == "__main__":
     main()
