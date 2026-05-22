@@ -40,15 +40,15 @@ El **Biblioteca Quality Automation Framework** es una solución empresarial de i
 
 Un **pipeline ETL automatizado** de 9 fases que:
 
-✅ Ingesta datos reales (Excel) + sintéticos (Faker)  
-✅ Deduplica registros con matching fuzzy (thefuzz)  
-✅ Normaliza a 3FN con integridad referencial  
-✅ Valida calidad de datos contra reglas configurables  
-✅ Enmascara datos sensibles (PII masking)  
-✅ Exporta a múltiples formatos (Excel, MongoDB)  
-✅ Genera reportes de auditoría (logs, cobertura de tests)  
-✅ Se ejecuta en contenedores (Docker Compose)  
-✅ Integración continua automatizada (GitHub Actions)
+ Ingesta datos reales (Excel) + sintéticos (Faker)  
+ Deduplica registros con matching fuzzy (thefuzz)  
+ Normaliza a 3FN con integridad referencial  
+ Valida calidad de datos contra reglas configurables  
+ Enmascara datos sensibles (PII masking)  
+ Exporta a múltiples formatos (Excel, MongoDB)  
+ Genera reportes de auditoría (logs, cobertura de tests)  
+ Se ejecuta en contenedores (Docker Compose)  
+ Integración continua automatizada (GitHub Actions)
 
 ---
 
@@ -57,111 +57,111 @@ Un **pipeline ETL automatizado** de 9 fases que:
 ### Diagrama de Flujo General
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   CLIENTE: Excel Datos Sucios                          │
-│                   + Faker Generador Sintético                          │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                    FASE 1: INGESTA (LOADING)                           │
-│  • Lectura de Excel (excel_loader.py)                                 │
-│  • Mapeo dinámico de columnas por hoja                                │
-│  • Inserción en tablas legacy (Biblioteca_Data, Prestamos_Crudos...)  │
-│  • SAVEPOINT/ROLLBACK para recuperación por fila                      │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                 FASE 2: DEDUPLICACIÓN (CLEANING)                       │
-│  • Matching fuzzy con thefuzz.ratio() + Levenshtein                   │
-│  • Identificación de duplicados por similitud >= 95%                  │
-│  • Resolución de conflictos: elección de registro canónico            │
-│  • Marcado de registros consolidados                                  │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                 FASE 3: NORMALIZACIÓN (3FN)                            │
-│  • Transformación de modelo plano → relacional                        │
-│  • Creación de entidades maestras (Autores, Editoriales, Categorías)  │
-│  • Separación de N:M relationships (libros_autores)                   │
-│  • Eliminación de dependencias transitivas                            │
-│  • Validación de constraints e integridad referencial                 │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│              FASE 4: VALIDACIÓN DE CALIDAD (QA)                        │
-│  • Análisis estático SQL (forbidden keywords, tipos de datos)         │
-│  • Validación dinámica de datos contra reglas JSON                    │
-│  • Verificación de constraints: required, max_length, regex, tipos    │
-│  • Generación de reporte de anomalías                                 │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│               FASE 5: ENMASCARAMIENTO DE PII                           │
-│  • Identificación de columnas sensibles (correo, teléfono, ID)        │
-│  • Aplicación de máscaras: hash, truncado, sustitución aleatoria     │
-│  • Mantenimiento de integridad referencial post-masking               │
-│  • Auditoría de transformaciones aplicadas                            │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│               FASE 6: MIGRACIÓN A MONGODB                              │
-│  • Mapeo relacional → documental (mapping_mongo.json)                 │
-│  • Denormalización controlada para acceso eficiente                   │
-│  • Creación de índices (single field + compound)                      │
-│  • Batch insert con control de errores transaccional                  │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│               FASE 7-8: EXPORTACIÓN Y REPORTES                         │
-│  • Exportación a Excel (openpyxl) con formato 3FN                     │
-│  • Generación de reportes de auditoría (CSV, logs)                    │
-│  • Estadísticas de transformación (registros, errores, duración)      │
-│  • Evidencia de cobertura de tests (pytest-cov)                       │
-└──────────────────────────┬───────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                   SALIDAS FINALES                                      │
-│                                                                         │
-│  PostgreSQL 16             MongoDB 7              Excel               │
-│  ├─ Schema 3FN             ├─ Colecciones         ├─ Normalizado     │
-│  ├─ Integridad RF          ├─ Índices             ├─ Formatos        │
-│  ├─ Auditoría              ├─ Validaciones        └─ PII Masking     │
-│  └─ PII Masking            └─ TTL (si aplica)                         │
-└────────────────────────────────────────────────────────────────────────┘
+
+                   CLIENTE: Excel Datos Sucios                          
+                   + Faker Generador Sintético                          
+
+                           
+                           
+
+                    FASE 1: INGESTA (LOADING)                           
+  • Lectura de Excel (excel_loader.py)                                 
+  • Mapeo dinámico de columnas por hoja                                
+  • Inserción en tablas legacy (Biblioteca_Data, Prestamos_Crudos...)  
+  • SAVEPOINT/ROLLBACK para recuperación por fila                      
+
+                           
+                           
+
+                 FASE 2: DEDUPLICACIÓN (CLEANING)                       
+  • Matching fuzzy con thefuzz.ratio() + Levenshtein                   
+  • Identificación de duplicados por similitud >= 95%                  
+  • Resolución de conflictos: elección de registro canónico            
+  • Marcado de registros consolidados                                  
+
+                           
+                           
+
+                 FASE 3: NORMALIZACIÓN (3FN)                            
+  • Transformación de modelo plano → relacional                        
+  • Creación de entidades maestras (Autores, Editoriales, Categorías)  
+  • Separación de N:M relationships (libros_autores)                   
+  • Eliminación de dependencias transitivas                            
+  • Validación de constraints e integridad referencial                 
+
+                           
+                           
+
+              FASE 4: VALIDACIÓN DE CALIDAD (QA)                        
+  • Análisis estático SQL (forbidden keywords, tipos de datos)         
+  • Validación dinámica de datos contra reglas JSON                    
+  • Verificación de constraints: required, max_length, regex, tipos    
+  • Generación de reporte de anomalías                                 
+
+                           
+                           
+
+               FASE 5: ENMASCARAMIENTO DE PII                           
+  • Identificación de columnas sensibles (correo, teléfono, ID)        
+  • Aplicación de máscaras: hash, truncado, sustitución aleatoria     
+  • Mantenimiento de integridad referencial post-masking               
+  • Auditoría de transformaciones aplicadas                            
+
+                           
+                           
+
+               FASE 6: MIGRACIÓN A MONGODB                              
+  • Mapeo relacional → documental (mapping_mongo.json)                 
+  • Denormalización controlada para acceso eficiente                   
+  • Creación de índices (single field + compound)                      
+  • Batch insert con control de errores transaccional                  
+
+                           
+                           
+
+               FASE 7-8: EXPORTACIÓN Y REPORTES                         
+  • Exportación a Excel (openpyxl) con formato 3FN                     
+  • Generación de reportes de auditoría (CSV, logs)                    
+  • Estadísticas de transformación (registros, errores, duración)      
+  • Evidencia de cobertura de tests (pytest-cov)                       
+
+                           
+                           
+
+                   SALIDAS FINALES                                      
+                                                                         
+  PostgreSQL 16             MongoDB 7              Excel               
+   Schema 3FN              Colecciones          Normalizado     
+   Integridad RF           Índices              Formatos        
+   Auditoría               Validaciones         PII Masking     
+   PII Masking             TTL (si aplica)                         
+
 ```
 
 ### Contexto de Ejecución
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                  Docker Compose (Orquestación)                  │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐  │
-│  │  PostgreSQL  │  │   MongoDB    │  │   Python App       │  │
-│  │      16      │  │      7       │  │  (Pipeline ETL)    │  │
-│  │              │  │              │  │                    │  │
-│  │ • Esquema    │  │ • Base de     │  │ • main.py          │  │
-│  │   Legacy     │  │   datos       │  │ • src/ (9 módulos) │  │
-│  │ • Esquema    │  │   Documental  │  │ • tests/ (QA)      │  │
-│  │   3FN        │  │ • Índices     │  │ • Dependencias     │  │
-│  │ • Auditoría  │  │   optimizados │  │   versionadas      │  │
-│  └────────┬─────┘  └────────┬──────┘  └────────┬───────────┘  │
-│           │                 │                  │               │
-│           └─────────────────┼──────────────────┘               │
-│                             │                                 │
-│                   Health Checks: REQUIRED                      │
-│              (app espera hasta que servicios                  │
-│               de datos estén READY antes de                   │
-│                    iniciar pipeline)                          │
-└─────────────────────────────────────────────────────────────────┘
+
+                  Docker Compose (Orquestación)                  
+                                                                 
+        
+    PostgreSQL       MongoDB         Python App         
+        16              7           (Pipeline ETL)      
+                                                        
+   • Esquema       • Base de        • main.py            
+     Legacy          datos          • src/ (9 módulos)   
+   • Esquema         Documental     • tests/ (QA)        
+     3FN           • Índices        • Dependencias       
+   • Auditoría       optimizados      versionadas        
+        
+                                                             
+                          
+                                                              
+                   Health Checks: REQUIRED                      
+              (app espera hasta que servicios                  
+               de datos estén READY antes de                   
+                    iniciar pipeline)                          
+
 ```
 
 ---
@@ -230,68 +230,68 @@ Un **pipeline ETL automatizado** de 9 fases que:
 
 ```
 biblioteca_quality_framework/
-│
-├── 📋 DOCUMENTACION_TECNICA_COMPLETA.md  ← Este documento
-├── README.md                              # Guía rápida de usuario
-├── requirements.txt                       # Dependencias Python pinned
-├── pytest.ini                            # Config de pytest y coverage
-├── Dockerfile                            # Definición de imagen app
-├── docker-compose.yml                    # Orquestación multi-contenedor
-├── main.py                               # Punto de entrada del pipeline
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml                        # GitHub Actions: Flake8 + Pytest CI
-│
-├── config/                               # Configuración declarativa
-│   ├── config_calidad.json              # Reglas de validación (tablas, columnas, regex)
-│   └── mapping_mongo.json                # Mapeo Relacional ↔ Documental
-│
-├── data/                                 # Archivos de entrada
-│   └── Gestion_Biblioteca_Datos_Sucios_Para_Limpiar.xlsx
-│
-├── sql/                                  # Definiciones de base de datos
-│   ├── 01_legacy_dirty_schema.sql       # Schema inicial (legacy plano)
-│   ├── 02_normalized_schema.sql         # Schema destino (3FN)
-│   └── 03_db_objects.sql                # Stored Procedures, Views, fn_calcular_multa()
-│
-├── src/                                  # Código principal (9 módulos)
-│   ├── __init__.py
-│   ├── db.py                            # Gestión de conexiones (psycopg2, pymongo)
-│   ├── excel_loader.py                  # Fase 1: Ingesta desde Excel
-│   ├── populate_legacy.py                # Fase 1b: Generación Faker (opcional)
-│   ├── deduplicator.py                  # Fase 2: Deduplicación fuzzy
-│   ├── normalizer.py                    # Fase 3: Transformación a 3FN
-│   ├── quality_validator.py             # Fase 4: Validación de calidad
-│   ├── migrator.py                      # Fase 6: Migración a MongoDB
-│   ├── excel_exporter.py                # Fase 7: Exportación a Excel
-│   └── utils.py                         # Funciones auxiliares (hash, logging, JSON)
-│
-├── tests/                                # Suite de pruebas unitarias (97 tests)
-│   ├── test_db.py                       # Validación de conexiones
-│   ├── test_excel.py                    # Tests: load + export + formatting
-│   ├── test_deduplicator.py             # Tests: fuzzy matching, resolución conflictos
-│   ├── test_normalizer.py               # Tests: transformaciones 3FN, integridad RF
-│   ├── test_quality_validator.py        # Tests: validación de reglas (26 test cases)
-│   ├── test_migrator_mongo.py           # Tests: inserción MongoDB, índices
-│   ├── test_populate.py                 # Tests: generación sintética con Faker
-│   ├── test_masking.py                  # Tests: enmascaramiento PII
-│   └── test_multa.py                    # Tests: cálculo de multas (business logic)
-│
-├── logs/                                 # Outputs y reportes (generados en runtime)
-│   ├── reporte_calidad.log              # Log transaccional del pipeline
-│   ├── flake8_report.txt                # Análisis de estilo
-│   ├── pylint_report.txt                # Análisis de calidad avanzado
-│   └── pytest_coverage.txt              # Evidencia cobertura ≥80%
-│
-├── mongo_exports/                        # Archivos exportados desde MongoDB
-│   └── *.xlsx                           # Excel generados en Fase 7
-│
-└── .env                                  # Variables de entorno (git-ignored)
-    ├── POSTGRES_HOST=postgres
-    ├── POSTGRES_PORT=5432
-    ├── MONGO_URI=mongodb://mongo:27017
-    └── LOG_LEVEL=INFO
+
+  DOCUMENTACION_TECNICA_COMPLETA.md  ← Este documento
+ README.md                              # Guía rápida de usuario
+ requirements.txt                       # Dependencias Python pinned
+ pytest.ini                            # Config de pytest y coverage
+ Dockerfile                            # Definición de imagen app
+ docker-compose.yml                    # Orquestación multi-contenedor
+ main.py                               # Punto de entrada del pipeline
+
+ .github/
+    workflows/
+        ci.yml                        # GitHub Actions: Flake8 + Pytest CI
+
+ config/                               # Configuración declarativa
+    config_calidad.json              # Reglas de validación (tablas, columnas, regex)
+    mapping_mongo.json                # Mapeo Relacional ↔ Documental
+
+ data/                                 # Archivos de entrada
+    Gestion_Biblioteca_Datos_Sucios_Para_Limpiar.xlsx
+
+ sql/                                  # Definiciones de base de datos
+    01_legacy_dirty_schema.sql       # Schema inicial (legacy plano)
+    02_normalized_schema.sql         # Schema destino (3FN)
+    03_db_objects.sql                # Stored Procedures, Views, fn_calcular_multa()
+
+ src/                                  # Código principal (9 módulos)
+    __init__.py
+    db.py                            # Gestión de conexiones (psycopg2, pymongo)
+    excel_loader.py                  # Fase 1: Ingesta desde Excel
+    populate_legacy.py                # Fase 1b: Generación Faker (opcional)
+    deduplicator.py                  # Fase 2: Deduplicación fuzzy
+    normalizer.py                    # Fase 3: Transformación a 3FN
+    quality_validator.py             # Fase 4: Validación de calidad
+    migrator.py                      # Fase 6: Migración a MongoDB
+    excel_exporter.py                # Fase 7: Exportación a Excel
+    utils.py                         # Funciones auxiliares (hash, logging, JSON)
+
+ tests/                                # Suite de pruebas unitarias (97 tests)
+    test_db.py                       # Validación de conexiones
+    test_excel.py                    # Tests: load + export + formatting
+    test_deduplicator.py             # Tests: fuzzy matching, resolución conflictos
+    test_normalizer.py               # Tests: transformaciones 3FN, integridad RF
+    test_quality_validator.py        # Tests: validación de reglas (26 test cases)
+    test_migrator_mongo.py           # Tests: inserción MongoDB, índices
+    test_populate.py                 # Tests: generación sintética con Faker
+    test_masking.py                  # Tests: enmascaramiento PII
+    test_multa.py                    # Tests: cálculo de multas (business logic)
+
+ logs/                                 # Outputs y reportes (generados en runtime)
+    reporte_calidad.log              # Log transaccional del pipeline
+    flake8_report.txt                # Análisis de estilo
+    pylint_report.txt                # Análisis de calidad avanzado
+    pytest_coverage.txt              # Evidencia cobertura ≥80%
+
+ mongo_exports/                        # Archivos exportados desde MongoDB
+    *.xlsx                           # Excel generados en Fase 7
+
+ .env                                  # Variables de entorno (git-ignored)
+     POSTGRES_HOST=postgres
+     POSTGRES_PORT=5432
+     MONGO_URI=mongodb://mongo:27017
+     LOG_LEVEL=INFO
 ```
 
 ### Responsabilidad de Cada Módulo
@@ -365,10 +365,10 @@ def populate_dirty_tables(conn, total_records: int = 250):
 
 **Características Clave:**
 
-✅ **Mapeo Dinámico:** Columnas identificadas por nombre, resiliente a reordenaciones  
-✅ **SAVEPOINT/ROLLBACK:** Por cada fila para recuperación granular de fallos  
-✅ **Logging Detallado:** Cada operación registrada con contexto (tabla, fila, error)  
-✅ **Ruido Controlado:** Inyección deliberada de anomalías (duplicados, valores inválidos)
+ **Mapeo Dinámico:** Columnas identificadas por nombre, resiliente a reordenaciones  
+ **SAVEPOINT/ROLLBACK:** Por cada fila para recuperación granular de fallos  
+ **Logging Detallado:** Cada operación registrada con contexto (tabla, fila, error)  
+ **Ruido Controlado:** Inyección deliberada de anomalías (duplicados, valores inválidos)
 
 ### Fase 2: DEDUPLICACIÓN (CLEANING)
 
@@ -415,10 +415,10 @@ def find_duplicates(conn, table: str, similarity_threshold: float = 0.95) -> dic
 
 **Características Clave:**
 
-✅ **Algoritmo de Levenshtein:** Distancia edit nativa (C compiled)  
-✅ **Similitud Combinada:** Multiple campos ponderados  
-✅ **Resolución de Conflictos:** Criterios: antigüedad, completitud, confiabilidad  
-✅ **Auditoría Transitoria:** Marca canónico, registra decisión
+ **Algoritmo de Levenshtein:** Distancia edit nativa (C compiled)  
+ **Similitud Combinada:** Multiple campos ponderados  
+ **Resolución de Conflictos:** Criterios: antigüedad, completitud, confiabilidad  
+ **Auditoría Transitoria:** Marca canónico, registra decisión
 
 ### Fase 3: NORMALIZACIÓN (3FN)
 
@@ -591,14 +591,14 @@ def validate_dirty_data(conn, config_path: Path) -> dict:
 
 **Reglas Soportadas:**
 
-✅ `required: bool` — Campo obligatorio no nulo/vacío  
-✅ `max_length: int` — Longitud máxima de string  
-✅ `type: "integer"|"date"|...` — Validación de tipo  
-✅ `regex: string` — Pattern matching POSIX  
-✅ `allowed_values: [...]` — Enum restrictivo  
-✅ `min: int`, `max: int` — Rango numérico  
-✅ `must_contain: string` — Substring requerido  
-✅ `no_empty_items_csv: bool` — CSV sin elementos vacíos
+ `required: bool` — Campo obligatorio no nulo/vacío  
+ `max_length: int` — Longitud máxima de string  
+ `type: "integer"|"date"|...` — Validación de tipo  
+ `regex: string` — Pattern matching POSIX  
+ `allowed_values: [...]` — Enum restrictivo  
+ `min: int`, `max: int` — Rango numérico  
+ `must_contain: string` — Substring requerido  
+ `no_empty_items_csv: bool` — CSV sin elementos vacíos
 
 ### Fase 5: ENMASCARAMIENTO DE PII
 
@@ -818,11 +818,11 @@ def export_normalized_to_excel(conn, output_path: Path | str) -> Path:
 
 **Docker Compose** orquesta 3 servicios en una definición YAML declarativa, garantizando:
 
-✅ **Reproducibilidad:** Mismo comportamiento dev → staging → prod  
-✅ **Aislamiento:** Cada contenedor con su own filesystem, network, UID  
-✅ **Health Checks:** Verificación automática de disponibilidad pre-ejecución  
-✅ **Persistencia:** Volúmenes para datos entre ejecuciones  
-✅ **Networking:** Comunicación intra-contenedor por nombre de servicio
+ **Reproducibilidad:** Mismo comportamiento dev → staging → prod  
+ **Aislamiento:** Cada contenedor con su own filesystem, network, UID  
+ **Health Checks:** Verificación automática de disponibilidad pre-ejecución  
+ **Persistencia:** Volúmenes para datos entre ejecuciones  
+ **Networking:** Comunicación intra-contenedor por nombre de servicio
 
 ### Estructura de docker-compose.yml
 
@@ -839,7 +839,7 @@ services:
     environment:
       POSTGRES_DB: biblioteca_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres  # ⚠️ En producción: usar secrets
+      POSTGRES_PASSWORD: postgres  #  En producción: usar secrets
     
     # Puertos exposición
     ports:
@@ -902,9 +902,9 @@ services:
     # Esperar a que servicios estén healthy ANTES de iniciar
     depends_on:
       postgres:
-        condition: service_healthy  # 🔴 Bloquea hasta pg_isready OK
+        condition: service_healthy  #  Bloquea hasta pg_isready OK
       mongo:
-        condition: service_healthy  # 🔴 Bloquea hasta mongosh ping OK
+        condition: service_healthy  #  Bloquea hasta mongosh ping OK
     
     # Volúmenes para persistencia de logs y outputs
     volumes:
@@ -927,34 +927,34 @@ volumes:
 ### Diagrama de Secuencia de Inicialización
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│              Docker Compose Up Sequence                         │
-└─────────────────────────────────────────────────────────────────┘
+
+              Docker Compose Up Sequence                         
+
 
     [T=0s]
-    ├─ Crear redes y volúmenes
-    │
-    ├─ Iniciar PostgreSQL
-    │  ├─ Esperar init scripts: 01_legacy_dirty_schema.sql
-    │  ├─ Health check: pg_isready (retry x10, 5s interval)
-    │  └─ [READY] PostgreSQL accessible en postgres:5432
-    │
-    ├─ Iniciar MongoDB
-    │  ├─ Esperar inicialización
-    │  ├─ Health check: mongosh ping (retry x10, 10s interval)
-    │  └─ [READY] MongoDB accessible en mongo:27017
-    │
-    ├─ Iniciar App (solo si ambas BDs READY)
-    │  ├─ Build imagen desde Dockerfile
-    │  ├─ Cargar .env + environment
-    │  ├─ Conectar a postgres:5432 (no localhost)
-    │  ├─ Conectar a mongodb://mongo:27017
-    │  └─ Ejecutar main.py (9-fase pipeline)
-    │
-    └─ [T=60s] Pipeline completo
-       ├─ Logs: logs_data/reporte_calidad.log
-       ├─ Excel: mongo_exports/*.xlsx
-       └─ Exit(0) → app container stops (no restart)
+     Crear redes y volúmenes
+    
+     Iniciar PostgreSQL
+       Esperar init scripts: 01_legacy_dirty_schema.sql
+       Health check: pg_isready (retry x10, 5s interval)
+       [READY] PostgreSQL accessible en postgres:5432
+    
+     Iniciar MongoDB
+       Esperar inicialización
+       Health check: mongosh ping (retry x10, 10s interval)
+       [READY] MongoDB accessible en mongo:27017
+    
+     Iniciar App (solo si ambas BDs READY)
+       Build imagen desde Dockerfile
+       Cargar .env + environment
+       Conectar a postgres:5432 (no localhost)
+       Conectar a mongodb://mongo:27017
+       Ejecutar main.py (9-fase pipeline)
+    
+     [T=60s] Pipeline completo
+        Logs: logs_data/reporte_calidad.log
+        Excel: mongo_exports/*.xlsx
+        Exit(0) → app container stops (no restart)
 ```
 
 ### Comando de Ejecución
@@ -1019,48 +1019,48 @@ jobs:
     
     steps:
     # Paso 1: Clonar repositorio
-    - name: 📥 Clonar el repositorio
+    - name:  Clonar el repositorio
       uses: actions/checkout@v4
     
     # Paso 2: Setup Python con cache de pip
-    - name: 🐍 Configurar Python 3.12
+    - name:  Configurar Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
-        cache: "pip"  # 🚀 Cache de dependencies para builds más rápidos
+        cache: "pip"  #  Cache de dependencies para builds más rápidos
     
     # Paso 3: Instalar dependencias
-    - name: 📦 Instalar dependencias
+    - name:  Instalar dependencias
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
     # Paso 4: Análisis de Estilo (Flake8)
-    - name: 🕵️‍♂️ Análisis de Estilo (Flake8)
+    - name:  Análisis de Estilo (Flake8)
       run: |
         # Configuración: max line length 100, ignore E501, W503
         flake8 src/ tests/ \
           --count \                    # Mostrar contador de errores
           --show-source \              # Mostrar línea problemática
           --statistics                 # Mostrar estadísticas de errores
-        # ✅ Build falla si hay errores de estilo (exit code != 0)
+        #  Build falla si hay errores de estilo (exit code != 0)
     
     # Paso 5: Pruebas Unitarias + Cobertura
-    - name: 🧪 Pruebas Unitarias y Cobertura (Pytest)
+    - name:  Pruebas Unitarias y Cobertura (Pytest)
       run: |
         pytest tests/ \
           --cov=src \                  # Medir cobertura de src/
-          --cov-fail-under=80 \        # ❌ Fallar si cobertura < 80%
+          --cov-fail-under=80 \        #  Fallar si cobertura < 80%
           --cov-report=term-missing    # Mostrar líneas no cubiertas
-        # ✅ Genera reporte HTML en htmlcov/index.html (opcional)
+        #  Genera reporte HTML en htmlcov/index.html (opcional)
 ```
 
 ### Flujo de Ejecución Detallado
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│              GitHub Actions Workflow                            │
-└─────────────────────────────────────────────────────────────────┘
+
+              GitHub Actions Workflow                            
+
 
 [TRIGGER: push to main]
        ↓
@@ -1076,35 +1076,35 @@ jobs:
    pip install -r requirements.txt (psycopg2, pytest, flake8, ...)
        ↓
 [Flake8 Análisis de Estilo]
-   ✅ flake8 src/ tests/
-      ├─ Verificar PEP8 (line length, indentation, imports)
-      ├─ Complejidad ciclomática (C901)
-      └─ Reporte: N errors, M warnings
+    flake8 src/ tests/
+       Verificar PEP8 (line length, indentation, imports)
+       Complejidad ciclomática (C901)
+       Reporte: N errors, M warnings
       
       Si ERRORS > 0:
-         ❌ BUILD FAILED (exit 1)
+          BUILD FAILED (exit 1)
       Else:
-         ✅ BUILD PASSED (continue)
+          BUILD PASSED (continue)
        ↓
 [Pytest: Unit Tests + Coverage]
-   ✅ pytest tests/ --cov=src --cov-fail-under=80
-      ├─ Ejecutar 97 tests
-      ├─ Medir cobertura de líneas en src/
-      ├─ Generar reporte:
-      │  ├─ src/__init__.py: 100%
-      │  ├─ src/db.py: 100%
-      │  ├─ src/excel_exporter.py: 98%
-      │  ├─ src/quality_validator.py: 94%
-      │  └─ TOTAL: 87.37%
-      │
+    pytest tests/ --cov=src --cov-fail-under=80
+       Ejecutar 97 tests
+       Medir cobertura de líneas en src/
+       Generar reporte:
+         src/__init__.py: 100%
+         src/db.py: 100%
+         src/excel_exporter.py: 98%
+         src/quality_validator.py: 94%
+         TOTAL: 87.37%
+      
       Si coverage < 80%:
-         ❌ BUILD FAILED (exit 1)
+          BUILD FAILED (exit 1)
          Mostrar líneas no cubiertas (Missing)
       Else:
-         ✅ BUILD PASSED
+          BUILD PASSED
        ↓
 [Summary]
-   ✅ All checks passed
+    All checks passed
    Crear artifact (opcional): pytest-report.html
    Enviar status a GitHub PR/commit
 ```
@@ -1113,7 +1113,7 @@ jobs:
 
 ```
 Name                       Stmts   Miss  Cover   Missing
-────────────────────────────────────────────────────────────
+
 src/__init__.py                0      0  100%
 src/db.py                     19      0  100%
 src/deduplicator.py           61      0  100%
@@ -1124,8 +1124,8 @@ src/normalizer.py            156     43   72%   27, 57-69, 135
 src/populate_legacy.py        91      9   90%   44, 67-76, 106-111
 src/quality_validator.py      84      5   94%   44, 59-60, 65-66
 src/utils.py                 27      1   96%   19
-────────────────────────────────────────────────────────────────────
-TOTAL                        594     75   87%    ✅ PASSED (>80%)
+
+TOTAL                        594     75   87%     PASSED (>80%)
 ```
 
 ### Reglas de Protección de Rama
@@ -1133,20 +1133,20 @@ TOTAL                        594     75   87%    ✅ PASSED (>80%)
 **En GitHub:** Settings → Branches → main
 
 ```
-✅ Require status checks to pass before merging:
+ Require status checks to pass before merging:
    - Biblioteca Quality Pipeline (CI) [quality-assurance]
    
-✅ Require branches to be up to date before merging
-✅ Require code reviews before merging (≥1)
-✅ Require conversation resolution before merging
-✅ Restrict who can push to matching branches
+ Require branches to be up to date before merging
+ Require code reviews before merging (≥1)
+ Require conversation resolution before merging
+ Restrict who can push to matching branches
 ```
 
 **Resultado:** Un commit no puede mergearse a main si:
-- ❌ Análisis de estilo falla (flake8 errors)
-- ❌ Tests fallan (pytest errors)
-- ❌ Cobertura < 80%
-- ❌ No hay PR review
+-  Análisis de estilo falla (flake8 errors)
+-  Tests fallan (pytest errors)
+-  Cobertura < 80%
+-  No hay PR review
 
 ---
 
@@ -1248,9 +1248,9 @@ Paso 5: Normalizar restantes entidades
   resenas (id_resena PK, id_usuario FK, id_libro FK, ...)
 
 Paso 6: Validar constraints
-  ✅ Todas las FKs validan
-  ✅ No hay ciclos
-  ✅ No hay redundancia transitiva
+   Todas las FKs validan
+   No hay ciclos
+   No hay redundancia transitiva
 ```
 
 ### 8.3 Deduplicación Fuzzy (deduplicator.py)
@@ -1303,47 +1303,47 @@ if fuzz.ratio(record1["titulo"], record2["titulo"]) / 100 >= threshold:
 **Máquina de Estado de Validación:**
 
 ```
-┌────────────────────────────────────────────────┐
-│  Valor entra a _validate_value(table, col, val, rule)  │
-└────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────┐
-│  ¿rule.required == true?                      │
-│  ├─ SI: ¿val is None?                         │
-│  │   ├─ SI: error = "valor obligatorio vacío" │
-│  │   └─ NO: continuar                         │
-│  └─ NO: continuar                             │
-└────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────┐
-│  ¿"max_length" in rule?                        │
-│  └─ SI: ¿len(val) > rule["max_length"]?        │
-│      ├─ SI: error += "longitud > max"          │
-│      └─ NO: continuar                         │
-└────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────┐
-│  ¿rule.type == "integer"?                      │
-│  └─ SI: ¿int(val) raises?                      │
-│      ├─ SI: error += "no es entero"            │
-│      └─ NO: continuar                         │
-└────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────┐
-│  ¿"regex" in rule?                             │
-│  └─ SI: ¿re.match(rule.regex, val)?            │
-│      ├─ SI: continuar                         │
-│      └─ NO: error += "no cumple formato"       │
-└────────────────────────────────────────────────┘
-            │
-            ▼
-┌────────────────────────────────────────────────┐
-│  Return: [errors] o []                        │
-└────────────────────────────────────────────────┘
+
+  Valor entra a _validate_value(table, col, val, rule)  
+
+            
+            
+
+  ¿rule.required == true?                      
+   SI: ¿val is None?                         
+      SI: error = "valor obligatorio vacío" 
+      NO: continuar                         
+   NO: continuar                             
+
+            
+            
+
+  ¿"max_length" in rule?                        
+   SI: ¿len(val) > rule["max_length"]?        
+       SI: error += "longitud > max"          
+       NO: continuar                         
+
+            
+            
+
+  ¿rule.type == "integer"?                      
+   SI: ¿int(val) raises?                      
+       SI: error += "no es entero"            
+       NO: continuar                         
+
+            
+            
+
+  ¿"regex" in rule?                             
+   SI: ¿re.match(rule.regex, val)?            
+       SI: continuar                         
+       NO: error += "no cumple formato"       
+
+            
+            
+
+  Return: [errors] o []                        
+
 ```
 
 ---
@@ -1355,21 +1355,21 @@ if fuzz.ratio(record1["titulo"], record2["titulo"]) / 100 >= threshold:
 **Enfoque:** Pirámide de tests (base amplia, apex angosto)
 
 ```
-        ▲
-       ╱ ╲
-      ╱   ╲     E2E (End-to-End)
-     ╱     ╲    - Integration tests
-    ╱───────╲   - Pipeline completo
-   ╱         ╲
-  ╱───────────╲ Integration Tests
- ╱             ╲ - Modelos interactuando
-╱───────────────╲
+        
+        
+              E2E (End-to-End)
+              - Integration tests
+       - Pipeline completo
+            
+   Integration Tests
+               - Modelos interactuando
 
-┌───────────────┐ Unit Tests (Cobertura ≥80%)
-│               │ - Funciones aisladas
-│ ~90 tests     │ - Mocks de dependencias
-│               │ - Rápidos (<1s por test)
-└───────────────┘
+
+ Unit Tests (Cobertura ≥80%)
+                - Funciones aisladas
+ ~90 tests      - Mocks de dependencias
+                - Rápidos (<1s por test)
+
 ```
 
 ### Suite de Pruebas (97 tests)
@@ -1385,21 +1385,21 @@ if fuzz.ratio(record1["titulo"], record2["titulo"]) / 100 >= threshold:
 | test_populate.py | 1 | 90% | Generación sintética con Faker |
 | test_masking.py | 13 | 100% | Enmascaramiento de PII |
 | test_multa.py | 7 | 100% | Cálculo de multas (business logic) |
-| **TOTAL** | **97** | **87.37%** | ✅ |
+| **TOTAL** | **97** | **87.37%** |  |
 
 ### Cobertura por Línea Crítica
 
 ```
-src/deduplicator.py        ████████████████████ 100%
-src/normalizer.py          ████████████████░░░░  72%
-src/quality_validator.py   ██████████████████░░  94%
-src/excel_exporter.py      ███████████████████░  98%
-src/populate_legacy.py     ██████████████████░░  90%
-src/utils.py               ███████████████████░  96%
-src/migrator.py            █████████████████░░░  85%
-src/excel_loader.py        ██████████████░░░░░░  83%
+src/deduplicator.py         100%
+src/normalizer.py            72%
+src/quality_validator.py     94%
+src/excel_exporter.py        98%
+src/populate_legacy.py       90%
+src/utils.py                 96%
+src/migrator.py              85%
+src/excel_loader.py          83%
 
-PROMEDIO TOTAL:            ███████████████░░░░░  87% ✅
+PROMEDIO TOTAL:              87% 
 ```
 
 ### Comando de Ejecución
@@ -1427,11 +1427,11 @@ open htmlcov/index.html
 
 | Caso de Uso | PostgreSQL | MongoDB |
 |---|---|---|
-| **Consultas transaccionales** | ✅ ACID, FOREIGN KEYS | ❌ Eventual consistency |
-| **Integridad referencial** | ✅ Native constraints | ⚠️ Application-level |
-| **Flexibilidad schema** | ❌ Fixed schema | ✅ Dynamic schema |
-| **Queries complejas (JOIN)** | ✅ Optimizadas | ⚠️ Denormalización necesaria |
-| **Escalabilidad horizontal** | ⚠️ Sharding complejo | ✅ Nativo sharding |
+| **Consultas transaccionales** |  ACID, FOREIGN KEYS |  Eventual consistency |
+| **Integridad referencial** |  Native constraints |  Application-level |
+| **Flexibilidad schema** |  Fixed schema |  Dynamic schema |
+| **Queries complejas (JOIN)** |  Optimizadas |  Denormalización necesaria |
+| **Escalabilidad horizontal** |  Sharding complejo |  Nativo sharding |
 
 **Decisión:** Usar ambas
 - PostgreSQL para datos normalizados (source of truth)
@@ -1441,10 +1441,10 @@ open htmlcov/index.html
 
 **Alternativas Evaluadas:**
 
-1. **Exact match** ❌ — Falla con typos ("John" vs "Jon")
-2. **Soundex/Metaphone** ⚠️ — Solo fonético, no orthographic
-3. **Cosine similarity (TF-IDF)** ⚠️ — Overhead para strings cortos
-4. **Levenshtein** ✅ — Óptimo para similitud de strings
+1. **Exact match**  — Falla con typos ("John" vs "Jon")
+2. **Soundex/Metaphone**  — Solo fonético, no orthographic
+3. **Cosine similarity (TF-IDF)**  — Overhead para strings cortos
+4. **Levenshtein**  — Óptimo para similitud de strings
 
 **thefuzz + python-Levenshtein:** 10-100x más rápido que implementación Python pura.
 
@@ -1452,10 +1452,10 @@ open htmlcov/index.html
 
 | Aspecto | Docker Compose | Kubernetes |
 |---|---|---|
-| **Curva de aprendizaje** | ⚠️ Moderada | ❌ Empinada |
-| **Setup inicial** | ⚠️ ~10 min | ❌ ~2 horas |
-| **Producción escalada** | ❌ Single host | ✅ Multi-node |
-| **Local development** | ✅ Perfecto | ⚠️ Overkill |
+| **Curva de aprendizaje** |  Moderada |  Empinada |
+| **Setup inicial** |  ~10 min |  ~2 horas |
+| **Producción escalada** |  Single host |  Multi-node |
+| **Local development** |  Perfecto |  Overkill |
 | **Requerimientos** | 1 YAML | 5-10 YAMLs |
 
 **Decisión:** Docker Compose para dev/staging (producción: Kubernetes después).
@@ -1556,7 +1556,7 @@ docker cp biblioteca_app:/app/logs ./outputs/logs
 docker cp biblioteca_app:/app/mongo_exports ./outputs/exports
 
 # 4. Limpiar
-docker compose down -v  # ⚠️ Elimina bases de datos
+docker compose down -v  #  Elimina bases de datos
 ```
 
 ---
@@ -1565,11 +1565,11 @@ docker compose down -v  # ⚠️ Elimina bases de datos
 
 El **Biblioteca Quality Automation Framework** implementa un pipeline ETL profesional de 9 fases que:
 
-✅ **Resuelve deuda técnica:** Transforma datos legacy sucios en modelo normalizado 3FN  
-✅ **Asegura calidad:** 97 tests unitarios con cobertura >87%  
-✅ **Automatiza CI/CD:** GitHub Actions ejecuta análisis + tests en cada push  
-✅ **Escala:** Docker Compose + PostgreSQL + MongoDB listos para producción  
-✅ **Audita:** Reportes completos de transformación, anomalías y evidencia  
+ **Resuelve deuda técnica:** Transforma datos legacy sucios en modelo normalizado 3FN  
+ **Asegura calidad:** 97 tests unitarios con cobertura >87%  
+ **Automatiza CI/CD:** GitHub Actions ejecuta análisis + tests en cada push  
+ **Escala:** Docker Compose + PostgreSQL + MongoDB listos para producción  
+ **Audita:** Reportes completos de transformación, anomalías y evidencia  
 
 ### Stack Final
 
