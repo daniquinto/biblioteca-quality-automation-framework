@@ -56,6 +56,6 @@ def test_export_normalized_to_excel(mock_openpyxl):
 
     out_path = export_normalized_to_excel(mock_conn, "out_dummy.xlsx")
 
-    assert "out_dummy.xlsx" in out_path
+    assert "out_dummy.xlsx" in str(out_path)
     assert mock_wb.save.called
-    assert mock_cursor.execute.call_count == 5  # 5 tablas/vistas
+    assert mock_cursor.execute.call_count == 6  # 6 tablas/vistas
