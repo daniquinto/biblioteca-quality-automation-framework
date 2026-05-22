@@ -8,7 +8,7 @@
 ![Flake8](https://img.shields.io/badge/Flake8-0%20errors-brightgreen)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
 
-> **Framework de Ingeniería de Datos** para la migración, limpieza, normalización y aseguramiento de calidad de la *Biblioteca Central UNISABANETA*. Implementa un pipeline ETL completo con pruebas unitarias automatizadas, análisis estático de código y despliegue en contenedores Docker.
+> **Framework de Ingeniería de Datos** para la migración, limpieza, normalización y aseguramiento de calidad de la *Biblioteca Central Universitaria*. Implementa un pipeline ETL completo con pruebas unitarias automatizadas, análisis estático de código y despliegue en contenedores Docker.
 
 ---
 
