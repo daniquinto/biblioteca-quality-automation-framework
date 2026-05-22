@@ -6,6 +6,7 @@ from src.quality_validator import validate_dirty_data, validate_sql_static
 from src.normalizer import normalize_from_dirty
 from src.migrator import migrate_to_mongo
 from src.utils import ROOT, execute_sql_file, load_json, setup_logger
+from src.excel_loader import load_excel
 
 # Definición de rutas base para asegurar la portabilidad del framework en diferentes entornos
 SQL_DIR = ROOT / "sql"
@@ -60,7 +61,19 @@ def main():
         logger.info("Creando esquema legacy sin normalizar")
         execute_sql_file(conn, SQL_DIR / "01_legacy_dirty_schema.sql")
 
-        # Fase 3: Estrés y Poblamiento. Se utiliza Faker para simular un volumen real
+        # Fase 3a: Ingesta de datos reales desde Excel (opcional).
+        # Si EXCEL_PATH está definido, se cargan filas reales y sucias antes del Faker,
+        # garantizando que el pipeline de calidad reciba un conjunto de datos mixto
+        # (real + sintético) más representativo de un entorno productivo.
+        excel_path = os.getenv("EXCEL_PATH", "")
+        if excel_path:
+            logger.info("Cargando datos reales desde Excel: %s", excel_path)
+            excel_stats = load_excel(conn, excel_path)
+            logger.info("Ingesta Excel completada: %s", excel_stats)
+        else:
+            logger.info("EXCEL_PATH no definido — se omite la ingesta desde Excel.")
+
+        # Fase 3b: Estrés y Poblamiento. Se utiliza Faker para simular un volumen real
         # que exponga las ineficiencias del modelo no normalizado.
         total_records = int(os.getenv("TOTAL_RECORDS", "250"))
         locale = os.getenv("FAKER_LOCALE", "es_CO")
