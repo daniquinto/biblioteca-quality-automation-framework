@@ -50,6 +50,8 @@ services:
     volumes:
       # Volumen compartido para persistir los reportes generados por flake8/pylint
       - logs_data:/app/logs
+      # Mapear mongo_exports a local para extraer el Excel generado
+      - ./mongo_exports:/app/mongo_exports
     restart: "no"   # El pipeline corre una vez y termina; no reiniciar en exit 0
 
 volumes:
