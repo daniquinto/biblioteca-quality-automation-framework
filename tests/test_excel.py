@@ -1,8 +1,8 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, date
 from unittest.mock import MagicMock, patch
 from src.excel_loader import load_excel
-from src.excel_exporter import _excel_value_and_format, export_normalized_to_excel
+from src.excel_exporter import _excel_value_and_format, export_normalized_to_excel, _auto_adjust_width
 
 
 @patch("pathlib.Path.exists", return_value=True)
@@ -87,7 +87,40 @@ def test_excel_value_and_format_fecha_resena_with_time():
     assert number_format is None
 
 
+def test_excel_value_and_format_date_object():
+    """Valida formateo de objetos date sin hora."""
+    value, number_format = _excel_value_and_format("fecha_publicacion", date(2024, 1, 2))
+    assert value == "02/01/2024"
+    assert number_format is None
+
+
+def test_excel_value_and_format_none_value():
+    """Valida que None se mantiene como None."""
+    value, number_format = _excel_value_and_format("cualquier_col", None)
+    assert value is None
+    assert number_format is None
+
+
 def test_excel_value_and_format_email_text():
     value, number_format = _excel_value_and_format("correo", "  USER@EMAIL.COM ")
     assert value == "user@email.com"
     assert number_format == "@"
+
+
+def test_auto_adjust_width():
+    """Valida que _auto_adjust_width calcula correctamente los anchos de columna."""
+    from openpyxl import Workbook
+    
+    # Usar un workbook real para probar _auto_adjust_width
+    wb = Workbook()
+    ws = wb.active
+    
+    # Agregar datos
+    ws['A1'] = "Header"
+    ws['A2'] = "LongValue"
+    
+    # Ejecutar la función
+    _auto_adjust_width(ws)
+    
+    # Verificar que se configuró el ancho
+    assert ws.column_dimensions['A'].width > 0

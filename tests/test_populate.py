@@ -7,6 +7,9 @@ def test_populate_dirty_tables():
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    
+    # Configurar fetchone() para devolver (0,) simulando que no hay registros previos
+    mock_cursor.fetchone.return_value = (0,)
 
     stats = populate_dirty_tables(mock_conn, total_records=10)
 
