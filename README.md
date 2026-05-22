@@ -1,145 +1,124 @@
 # Framework de Calidad, Automatización y Migración de Datos - Biblioteca Central
 
-## 1. Propósito
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)
+![MongoDB](https://img.shields.io/badge/MongoDB-7-green?logo=mongodb)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
+![Coverage](https://img.shields.io/badge/Coverage-%3E80%25-brightgreen)
+![Quality](https://img.shields.io/badge/Quality-Pylint%20%7C%20Flake8-blueviolet)
 
-Este proyecto implementa una solución profesional para el reto de calidad de software de la Biblioteca Central. El sistema toma una base de datos PostgreSQL legacy mal diseñada, la puebla automáticamente con datos de prueba, valida su calidad mediante reglas declaradas en JSON, normaliza el modelo en 3FN, ejecuta objetos de base de datos y migra la información consistente hacia MongoDB.
+## 1. Arquitectura y Visión General
 
-## 2. Alcance cubierto
+Este proyecto de Ingeniería de Datos automatiza la extracción, limpieza, normalización y migración de datos para la **Biblioteca Central**. Resuelve un ecosistema *Legacy* con violaciones graves de diseño de datos (1FN) y anomalías caóticas, llevándolo hacia un entorno **Relacional Normalizado (3FN)** en PostgreSQL, y exportando modelos documentales hacia **MongoDB**.
 
-La solución cubre estrictamente los entregables solicitados:
+Todo el ciclo está orquestado desde un contenedor Docker (App-Python) que interactúa con las bases de datos de forma autónoma.
 
-- `main.py`: orquestador del proceso completo.
-- `sql/`: scripts SQL para modelo legacy, modelo normalizado y objetos de base de datos.
-- `config/config_calidad.json`: reglas de validación de calidad.
-- `config/mapping_mongo.json`: reglas de mapeo PostgreSQL -> MongoDB.
-- `logs/reporte_calidad.log`: reporte generado automáticamente en ejecución.
-- `guia.md`: guía para validar requerimientos y ejecutar en Linux con Visual Studio Code.
+### Flujo del ETL (Pipeline)
+1. **Inicialización DB:** PostgreSQL levanta el esquema *Legacy* (tablas planas sin integridad).
+2. **Ingesta de Datos:** Carga registros reales desde archivos `.xlsx` y genera un volumen de datos sintéticos caóticos (anomalías explícitas, valores nulos, PII en texto claro) usando Faker.
+3. **Auditoría de Calidad:** Valida las reglas de negocio declaradas en `config_calidad.json`.
+4. **Deduplicación Difusa (Fuzzy Matching):** Limpia duplicados en las tablas planas comparando strings con métricas de distancia (`thefuzz`) antes de normalizar.
+5. **Normalización (3FN):** Separa las tablas en un modelo robusto y transfiere los datos sanos coercing tipos.
+6. **Ejecución Lógica de Negocio:** Ejecuta Stored Procedures, Views (ej. top libros), y funciones en PostgreSQL (ej. cálculo de multas).
+7. **Exportación a Excel:** Genera el reporte final (`data/biblioteca_normalizada.xlsx`) con las tablas limpias.
+8. **Migración a MongoDB (Cross-Platform):** Transfiere documentos aplicando **Data Masking** (SHA/Máscara parcial) a información sensible (PII).
+9. **QA Code Pipeline:** Corre análisis estático (`flake8`, `pylint`) y pruebas unitarias (`pytest --cov-fail-under=80`).
 
-## 3. Arquitectura
+---
+
+## 2. Tecnologías y Librerías
+
+- **Orquestación:** Docker Compose.
+- **Python Drivers:** `psycopg2-binary` (PostgreSQL), `pymongo` (MongoDB).
+- **Procesamiento de Datos:** `openpyxl` (Excel Ingest/Export), `Faker` (Synthetic Data).
+- **Limpieza de Datos:** `thefuzz`, `python-Levenshtein` (Fuzzy Matching).
+- **QA y Pruebas:** `pytest`, `pytest-cov`, `flake8`, `pylint`, `unittest.mock`.
+
+---
+
+## 3. Estructura del Proyecto
 
 ```text
 biblioteca_quality_framework/
-├── main.py
-├── requirements.txt
-├── docker-compose.yml
-├── .env.example
+├── main.py                  # Orquestador del Pipeline (9 Fases)
+├── requirements.txt         # Dependencias
+├── Dockerfile               # Construcción de la imagen Python App
+├── docker-compose.yml       # Levantamiento de infraestructura
+├── .env                     # Variables de entorno
 ├── config/
-│   ├── config_calidad.json
-│   └── mapping_mongo.json
+│   ├── config_calidad.json  # Reglas dinámicas de QA de datos
+│   └── mapping_mongo.json   # Reglas de Mapeo Relacional -> NoSQL
+├── data/                    # Entrada/Salida de archivos (.xlsx)
 ├── sql/
-│   ├── 01_legacy_dirty_schema.sql
-│   ├── 02_normalized_schema.sql
-│   └── 03_db_objects.sql
+│   ├── 01_legacy_dirty_schema.sql  # Auto-ejecutado por Postgres init
+│   ├── 02_normalized_schema.sql    # Esquema 3FN
+│   └── 03_db_objects.sql           # Vistas, Funciones, y Cursores
 ├── src/
-│   ├── db.py
-│   ├── migrator.py
-│   ├── normalizer.py
-│   ├── populate_legacy.py
-│   ├── quality_validator.py
-│   └── utils.py
-├── tests/
-│   └── test_quality_validator.py
-├── logs/
-└── mongo_exports/
+│   ├── db.py                # Context managers de conexiones DB
+│   ├── deduplicator.py      # Fuzzy matching y consolidación
+│   ├── excel_exporter.py    # Generador del informe final Excel
+│   ├── excel_loader.py      # Lector de datos Legacy
+│   ├── migrator.py          # Data Masking & Migración MongoDB
+│   ├── normalizer.py        # Limpieza y coerción (Regex, Dates)
+│   ├── populate_legacy.py   # Inyección de caos e irregularidades
+│   ├── quality_validator.py # Motor validador de integridad
+│   └── utils.py             # Funciones de parseo y logger
+├── tests/                   # Suite de Pruebas Unitarias (>80% Cov)
+└── logs/                    # Artefactos: reportes Pylint, Pytest, Flake8
 ```
 
-## 4. Diseño de datos
+---
 
-### 4.1 Modelo legacy
+## 4. Ejecución del Proyecto (Docker)
 
-El archivo `sql/01_legacy_dirty_schema.sql` reproduce el modelo inicial con problemas intencionales:
+El proyecto está diseñado para correr al "Push of a button".
 
-- Campos multivalorados como `libros_prestados`.
-- Campos combinados como `categoria_y_descripcion`.
-- Tipos inconsistentes como `fecha_publicacion VARCHAR(50)` y `calificacion VARCHAR(10)`.
-- Ausencia de llaves foráneas.
+### Requisitos
+- Docker y Docker Compose instalados.
 
-### 4.2 Modelo normalizado 3FN
-
-El archivo `sql/02_normalized_schema.sql` crea un diseño normalizado con tablas separadas para:
-
-- `libros`
-- `autores`
-- `libros_autores`
-- `usuarios`
-- `prestamos`
-- `categorias`
-- `editoriales`
-- `sedes`
-- `inventario`
-- `resenas`
-- `auditoria_prestamos`
-
-Se aplican claves primarias, claves foráneas, restricciones `CHECK`, unicidad y relaciones de integridad referencial.
-
-## 5. Objetos de base de datos
-
-El archivo `sql/03_db_objects.sql` implementa:
-
-- Stored Procedures CRUD sobre la tabla principal `libros`:
-  - `sp_insertar_libro`
-  - `sp_actualizar_libro`
-  - `sp_eliminar_libro`
-- Vista `vw_libros_mas_prestados`.
-- Función `fn_calcular_multa`.
-- Cursor encapsulado en `sp_auditar_prestamos_activos`, que genera registros en `auditoria_prestamos`.
-
-## 6. Automatización en Python
-
-El orquestador `main.py` ejecuta las fases en orden:
-
-1. Crea el modelo legacy.
-2. Inserta 250 registros automáticos usando Faker.
-3. Valida sintaxis y calidad usando `config_calidad.json`.
-4. Aplica el modelo normalizado en 3FN.
-5. Ejecuta stored procedures, vista, función y cursor.
-6. Migra datos a MongoDB usando `mapping_mongo.json`.
-7. Genera el log `logs/reporte_calidad.log`.
-
-## 7. Configuración
-
-Copie el archivo de ejemplo:
+### Instrucciones
+1. Clona el repositorio y ubícate en la raíz.
+2. (Opcional) Crea/deposita tu archivo excel `biblioteca.xlsx` en la carpeta `/data` si deseas probar con datos reales, y ajusta `.env`.
+3. Levanta la infraestructura:
 
 ```bash
-cp .env.example .env
+docker compose up --build
 ```
 
-Variables principales:
+El orquestador de Docker:
+- Descargará las imágenes de PostgreSQL 16 y MongoDB 7.
+- Inicializará las bases de datos montando el script legacy en `/docker-entrypoint-initdb.d/`.
+- Compilará la imagen de la aplicación en Python (`biblioteca_app`).
+- Esperará a que los *healthchecks* de las bases de datos sean positivos.
+- Lanzará todo el pipeline en `main.py`.
 
-```env
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=biblioteca_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-MONGO_URI=mongodb://localhost:27017
-MONGO_DB=biblioteca_mongo
-FAKER_LOCALE=es_CO
-```
-
-## 8. Ejecución rápida con Docker
-
+Para ver únicamente los logs de la aplicación Python y seguir el progreso:
 ```bash
-docker compose up -d
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python main.py
+docker compose logs -f app
 ```
 
-## 9. Evidencia esperada
+---
 
-Al finalizar, deben existir:
+## 5. Salidas y Evidencias (Entregables)
 
-- Datos en PostgreSQL en las tablas normalizadas.
-- Documentos en MongoDB en las colecciones `books`, `users`, `loans` e `inventory`.
-- Log de calidad en `logs/reporte_calidad.log`.
-- Salida en consola con el top de libros más prestados y cálculo de multa.
+Al finalizar exitosamente, el contenedor emitirá resultados en múltiples formatos:
 
-## 10. Consideraciones profesionales
+1. **Bases de Datos Vivas:** 
+   - PostgreSQL accesible en puerto `5432` con esquema 3FN poblado.
+   - MongoDB accesible en puerto `27017` con documentos migrados.
+2. **Reporte Excel:**
+   - En la ruta `data/biblioteca_normalizada.xlsx` estarán las tablas estructuradas (Libros, Préstamos, Reseñas, Usuarios y Vista Analítica).
+3. **Logs y QA:**
+   - En la ruta `logs/` se encuentran:
+     - `reporte_calidad.log`: Log general de la transacción.
+     - `flake8_report.txt` y `pylint_report.txt`: Resultados del análisis estático de código.
+     - `pytest_coverage.txt`: Evidencia de que las pruebas unitarias superaron la valla del 80%.
 
-- La lógica está modularizada en `src/`.
-- Las reglas de validación y mapeo no están quemadas en el código: se leen desde JSON.
-- La solución usa transacciones en PostgreSQL.
-- La migración limpia colecciones destino antes de insertar para mantener ejecuciones reproducibles.
-- El proyecto incluye prueba unitaria base con `pytest`.
+---
+
+## 6. Detalles Avanzados de Ingeniería
+
+- **Seguridad por Diseño (Data Masking):** Se aplica la función `_mask_email()` en la capa de migración a Mongo. Correos como `juan@example.com` llegan como hashes SHA-256 o en formato `j****n@example.com` al entorno NoSQL.
+- **Fuzzy Matching con Blocking:** Para evitar que la deduplicación crezca a *O(n²)* en tiempo de procesamiento, la técnica agrupa strings por la primera palabra clave, realizando comparaciones efectivas (distancia de Levenshtein) y tomando decisiones inteligentes sobre el "Registro Maestro".
+- **Coerción Robusta de Datos:** El framework previene *crashes* en SQL usando `try/except` envolventes (simulando `.to_numeric(errors='coerce')` de Pandas) y `datetime.strptime` nativos en Python.
+- **Transaccionalidad (ACID):** El uso de *Context Managers* en Python asegura que ante cualquier fallo fatal, el estado de la base de datos revierta a su último punto limpio (`conn.rollback()`).
