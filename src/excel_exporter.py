@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import openpyxl
 from openpyxl.styles import Font
