@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
 def _split_category(raw: str) -> tuple[str, str]:
@@ -11,6 +11,26 @@ def _split_category(raw: str) -> tuple[str, str]:
         name, desc = raw.split("|", 1)
         return name.strip(), desc.strip()
     return (raw or "Sin categoría").strip(), "Sin descripción"
+
+
+def _parse_date(raw) -> object:
+    """
+    Normaliza fechas heterogéneas del legado a objetos date de Python.
+    Soporta formatos: YYYY-MM-DD, DD/MM/YYYY, M/D/YYYY y objetos date nativos.
+    Retorna None para valores no parseables ('N/A', 'Desconocida', textos libres).
+    """
+    if raw is None:
+        return None
+    # Si ya es un objeto date/datetime, retornarlo directamente
+    if hasattr(raw, 'year'):
+        return raw
+    raw_str = str(raw).strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%-d/%-m/%Y", "%d/%m/%y"):
+        try:
+            return datetime.strptime(raw_str, fmt).date()
+        except (ValueError, TypeError):
+            continue
+    return None  # 'N/A', 'Desconocida', valores libres → NULL
 
 
 def normalize_from_dirty(conn) -> dict:
@@ -29,13 +49,19 @@ def normalize_from_dirty(conn) -> dict:
         books = cur.fetchall()
         for title, author, catdesc, editorial, pubdate in books:
             category, description = _split_category(catdesc)
+            parsed_pubdate = _parse_date(pubdate)
             # El uso de Stored Procedures centraliza la lógica de inserción en múltiples tablas relacionadas, 
             # asegurando la integridad referencial y la atomicidad de la transacción.
-            cur.execute(
-                "CALL sp_insertar_libro(%s,%s,%s,%s,%s,%s)",
-                (title, pubdate, category, description, editorial, author)
-            )
-            stats["books"] += 1
+            cur.execute("SAVEPOINT normalize_book")
+            try:
+                cur.execute(
+                    "CALL sp_insertar_libro(%s,%s,%s,%s,%s,%s)",
+                    (title, parsed_pubdate, category, description, editorial, author)
+                )
+                stats["books"] += 1
+                cur.execute("RELEASE SAVEPOINT normalize_book")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT normalize_book")
 
         cur.execute(
             'SELECT nombre_usuario, correo_usuario, libros_prestados, '
@@ -48,29 +74,30 @@ def normalize_from_dirty(conn) -> dict:
                 email if email and re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email) 
                 else f"usuario_{stats['users']}@invalido.com"
             )
-            
-            cur.execute(
-                "INSERT INTO usuarios(nombre, correo) VALUES (%s,%s) "
-                "ON CONFLICT (correo) DO UPDATE SET nombre=EXCLUDED.nombre RETURNING id_usuario",
-                (user_name, valid_email),
-            )
-            user_id = cur.fetchone()[0]
-            stats["users"] += 1
+            # Valor por defecto para nombres nulos en el legado
+            clean_name = (user_name or "Usuario Desconocido").strip() or "Usuario Desconocido"
+
+            cur.execute("SAVEPOINT normalize_user")
+            try:
+                cur.execute(
+                    "INSERT INTO usuarios(nombre, correo) VALUES (%s,%s) "
+                    "ON CONFLICT (correo) DO UPDATE SET nombre=EXCLUDED.nombre RETURNING id_usuario",
+                    (clean_name, valid_email),
+                )
+                user_id = cur.fetchone()[0]
+                stats["users"] += 1
+                cur.execute("RELEASE SAVEPOINT normalize_user")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT normalize_user")
+                continue
             # Normalización de listas multivaloradas: la iteración del CSV permite la creación de registros 
             # individuales por cada libro prestado, cumpliendo estrictamente con la 1FN.
             for title in [item.strip() for item in (borrowed or "").split(",") if item.strip()]:
                 cur.execute("SELECT id_libro FROM libros WHERE titulo=%s", (title,))
                 result = cur.fetchone()
                 if result:
-                    # Limpieza y coerción de fecha usando datetime (evitando "Sin fecha")
-                    from datetime import datetime
-                    try:
-                        if isinstance(checkout, str):
-                            parsed_checkout = datetime.strptime(checkout.strip(), "%Y-%m-%d").date()
-                        else:
-                            parsed_checkout = checkout
-                    except Exception:
-                        parsed_checkout = datetime.today().date()
+                    # Limpieza y coerción de fecha usando _parse_date (soporta múltiples formatos del legado)
+                    parsed_checkout = _parse_date(checkout) or datetime.today().date()
                         
                     return_date = parsed_checkout + timedelta(days=10) if status == "DEVUELTO" else None
                     cur.execute(
@@ -82,50 +109,74 @@ def normalize_from_dirty(conn) -> dict:
 
         cur.execute('SELECT sede_nombre, ubicacion_sede, libro_asociado, cantidad_total FROM "Inventario_Sedes"')
         for branch, location, title, quantity in cur.fetchall():
-            cur.execute(
-                "INSERT INTO sedes(nombre, ubicacion) VALUES (%s,%s) "
-                "ON CONFLICT (nombre) DO UPDATE SET ubicacion=EXCLUDED.ubicacion RETURNING id_sede", 
-                (branch, location)
-            )
-            branch_id = cur.fetchone()[0]
+            clean_branch = (branch or "Sede Desconocida").strip() or "Sede Desconocida"
+            clean_location = (location or "Sin ubicacion").strip() or "Sin ubicacion"
+            cur.execute("SAVEPOINT normalize_sede")
+            try:
+                cur.execute(
+                    "INSERT INTO sedes(nombre, ubicacion) VALUES (%s,%s) "
+                    "ON CONFLICT (nombre) DO UPDATE SET ubicacion=EXCLUDED.ubicacion RETURNING id_sede",
+                    (clean_branch, clean_location)
+                )
+                branch_id = cur.fetchone()[0]
+                cur.execute("RELEASE SAVEPOINT normalize_sede")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT normalize_sede")
+                continue
+
             cur.execute("SELECT id_libro FROM libros WHERE titulo=%s", (title,))
             book = cur.fetchone()
             if book:
-                # Coerción de tipo para cantidad_total (evitando textos como "Diez" o negativos)
+                # Coercion de tipo para cantidad_total (evitando textos como "Diez" o negativos)
                 try:
                     qty = int(quantity)
                     qty = max(0, qty)
                 except (ValueError, TypeError):
                     qty = 0
-                    
-                cur.execute(
-                    "INSERT INTO inventario(id_sede, id_libro, cantidad_total) VALUES (%s,%s,%s) "
-                    "ON CONFLICT (id_sede,id_libro) DO UPDATE SET cantidad_total=EXCLUDED.cantidad_total", 
-                    (branch_id, book[0], qty)
-                )
-                stats["inventory"] += 1
+
+                cur.execute("SAVEPOINT normalize_inv")
+                try:
+                    cur.execute(
+                        "INSERT INTO inventario(id_sede, id_libro, cantidad_total) VALUES (%s,%s,%s) "
+                        "ON CONFLICT (id_sede,id_libro) DO UPDATE SET cantidad_total=EXCLUDED.cantidad_total",
+                        (branch_id, book[0], qty)
+                    )
+                    stats["inventory"] += 1
+                    cur.execute("RELEASE SAVEPOINT normalize_inv")
+                except Exception:
+                    cur.execute("ROLLBACK TO SAVEPOINT normalize_inv")
 
         cur.execute('SELECT usuario_id, libro_titulo, comentario, calificacion FROM "Reseñas_Usuarios"')
         for user_raw_id, title, comment, rating in cur.fetchall():
             cur.execute("SELECT id_libro FROM libros WHERE titulo=%s", (title,))
             book = cur.fetchone()
+            # usuario_id puede ser un entero, texto como 'Usuario_Desconocido', o None
+            try:
+                uid_offset = max(int(str(user_raw_id).strip()) - 1, 0)
+            except (ValueError, TypeError):
+                uid_offset = 0
             cur.execute(
-                "SELECT id_usuario FROM usuarios ORDER BY id_usuario OFFSET %s LIMIT 1", 
-                (max(int(user_raw_id) - 1, 0),)
+                "SELECT id_usuario FROM usuarios ORDER BY id_usuario OFFSET %s LIMIT 1",
+                (uid_offset,)
             )
             user = cur.fetchone()
             if book and user:
-                # Coerción de calificación caótica ("5/5", "Cinco", nulos)
+                # Coercion de calificacion caotica ("5/5", "Cinco", nulos)
                 try:
                     rtg = int(str(rating).split("/")[0]) if rating else 3
                 except ValueError:
                     rtg = 3
                 rtg = max(1, min(5, rtg))
-                
-                cur.execute(
-                    "INSERT INTO resenas(id_usuario, id_libro, comentario, calificacion) VALUES (%s,%s,%s,%s) "
-                    "ON CONFLICT (id_usuario,id_libro) DO NOTHING", 
-                    (user[0], book[0], comment, rtg)
-                )
-                stats["reviews"] += 1
+
+                cur.execute("SAVEPOINT normalize_resena")
+                try:
+                    cur.execute(
+                        "INSERT INTO resenas(id_usuario, id_libro, comentario, calificacion) VALUES (%s,%s,%s,%s) "
+                        "ON CONFLICT (id_usuario,id_libro) DO NOTHING",
+                        (user[0], book[0], comment, rtg)
+                    )
+                    stats["reviews"] += 1
+                    cur.execute("RELEASE SAVEPOINT normalize_resena")
+                except Exception:
+                    cur.execute("ROLLBACK TO SAVEPOINT normalize_resena")
     return stats
