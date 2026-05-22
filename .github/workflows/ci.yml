@@ -11,24 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Clonar el repositorio
+    - name: Clonar el repositorio
       uses: actions/checkout@v4
 
-    - name: 🐍 Configurar Python 3.12
+    - name: Configurar Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
         cache: "pip"
 
-    - name: 📦 Instalar dependencias
+    - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 🕵️‍♂️ Análisis de Estilo (Flake8)
+    - name: Análisis de Estilo (Flake8)
       run: |
         flake8 src/ tests/ --count --show-source --statistics
 
-    - name: 🧪 Pruebas Unitarias y Cobertura (Pytest)
+    - name: Pruebas Unitarias y Cobertura (Pytest)
       run: |
         pytest tests/ --cov=src --cov-fail-under=80 --cov-report=term-missing
