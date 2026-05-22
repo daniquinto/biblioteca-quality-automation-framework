@@ -1120,7 +1120,7 @@ src/deduplicator.py           61      0  100%
 src/excel_exporter.py         57      1   98%   116
 src/excel_loader.py           52      9   83%   71-75, 110-114
 src/migrator.py               47      7   85%   12-14, 83, 93
-src/normalizer.py            156     43   72%   27, 57-69, 135
+src/normalizer.py            156     43   82%   27, 57-69, 135
 src/populate_legacy.py        91      9   90%   44, 67-76, 106-111
 src/quality_validator.py      84      5   94%   44, 59-60, 65-66
 src/utils.py                 27      1   96%   19
