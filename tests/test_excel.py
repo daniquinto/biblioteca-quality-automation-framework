@@ -1,37 +1,57 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from src.excel_loader import load_excel
+from src.excel_exporter import export_normalized_to_excel
 
-@patch('src.excel_loader.pd')
-def test_load_excel_success(mock_pd):
-    """Prueba que los datos de Excel se inserten correctamente."""
+@patch('src.excel_loader.openpyxl')
+def test_load_excel_success(mock_openpyxl):
+    """Prueba que los datos de Excel se inserten correctamente usando openpyxl."""
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
-    # Mock del DataFrame de pandas
-    mock_df = MagicMock()
-    mock_df.fillna.return_value = mock_df
-    # Simulamos dos filas
-    mock_df.itertuples.return_value = [
-        MagicMock(Titulo="A", Autor="B", Categoria="C", Editorial="D", Publicacion="E"),
-        MagicMock(Titulo="F", Autor="G", Categoria="H", Editorial="I", Publicacion="J")
-    ]
+    mock_wb = MagicMock()
+    mock_openpyxl.load_workbook.return_value = mock_wb
+    mock_wb.sheetnames = ["Biblioteca_Data"]
     
-    mock_pd.read_excel.return_value = mock_df
+    mock_sheet = MagicMock()
+    mock_wb.__getitem__.return_value = mock_sheet
+    
+    # Simula 3 filas: 1 header, 2 datos
+    mock_sheet.iter_rows.return_value = [
+        ("titulo", "autor", "cat", "edit", "fecha"),
+        ("T1", "A1", "C1", "E1", "F1"),
+        ("T2", "A2", "C2", "E2", "F2")
+    ]
 
     stats = load_excel(mock_conn, "dummy.xlsx")
 
-    assert stats["filas_procesadas"] == 2
+    assert stats["Biblioteca_Data"] == 2
     assert mock_cursor.execute.call_count == 2
 
-@patch('src.excel_loader.pd')
-def test_load_excel_file_not_found(mock_pd):
+def test_load_excel_file_not_found():
     """Valida el manejo de error cuando el Excel no existe."""
     mock_conn = MagicMock()
-    mock_pd.read_excel.side_effect = FileNotFoundError("No such file")
+    with pytest.raises(FileNotFoundError):
+        load_excel(mock_conn, "no_existe_dummy.xlsx")
 
-    stats = load_excel(mock_conn, "dummy.xlsx")
-
-    assert stats["filas_procesadas"] == 0
-    assert "error" in stats
+@patch('src.excel_exporter.openpyxl')
+def test_export_normalized_to_excel(mock_openpyxl):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    
+    # Simula descripcion de columnas
+    mock_cursor.description = [("col1",), ("col2",)]
+    mock_cursor.fetchall.return_value = [(1, "A"), (2, "B")]
+    
+    mock_wb = MagicMock()
+    mock_openpyxl.Workbook.return_value = mock_wb
+    mock_ws = MagicMock()
+    mock_wb.create_sheet.return_value = mock_ws
+    
+    out_path = export_normalized_to_excel(mock_conn, "out_dummy.xlsx")
+    
+    assert "out_dummy.xlsx" in out_path
+    assert mock_wb.save.called
+    assert mock_cursor.execute.call_count == 5 # 5 tablas

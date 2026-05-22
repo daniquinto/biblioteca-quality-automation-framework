@@ -8,6 +8,7 @@ from src.normalizer import normalize_from_dirty
 from src.migrator import migrate_to_mongo
 from src.utils import ROOT, execute_sql_file, load_json, setup_logger
 from src.excel_loader import load_excel
+from src.excel_exporter import export_normalized_to_excel
 from src.deduplicator import deduplicate_biblioteca
 
 # Definición de rutas base para asegurar la portabilidad del framework en diferentes entornos
@@ -110,6 +111,13 @@ def main():
 
         # Fase 6: Pruebas de Integridad.
         run_view_and_function_examples(conn, logger)
+
+        # Fase 6.5: Exportación a Excel.
+        # El taller pide un informe en Excel de los datos normalizados.
+        logger.info("Exportando informe de datos normalizados a Excel...")
+        export_path = ROOT / "data" / "biblioteca_normalizada.xlsx"
+        export_normalized_to_excel(conn, export_path)
+        logger.info("Exportación completada: %s", export_path)
 
         # Fase 7: Migración NoSQL (Cross-Platform).
         # Transformación final de datos relacionales a documentos JSON para MongoDB.
