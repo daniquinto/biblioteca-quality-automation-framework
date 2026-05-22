@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+
 def _split_category(raw: str) -> tuple[str, str]:
     """
     Limpieza y atomización de strings para cumplimiento de la Primera Forma Normal (1FN).
