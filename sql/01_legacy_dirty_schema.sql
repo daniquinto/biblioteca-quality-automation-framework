@@ -41,7 +41,7 @@ CREATE TABLE Prestamos_Crudos (
     nombre_usuario  VARCHAR(255),
     correo_usuario  VARCHAR(255),
     libros_prestados TEXT,                 -- Lista multivalorada → viola 1FN
-    fecha_salida    DATE,
+    fecha_salida    VARCHAR(50),           -- Almacena fechas con formatos mixtos o "Sin fecha"
     estado_prestamo VARCHAR(20)
 );
 
@@ -54,7 +54,7 @@ CREATE TABLE Inventario_Sedes (
     sede_nombre     VARCHAR(100),
     ubicacion_sede  VARCHAR(255),
     libro_asociado  VARCHAR(255),
-    cantidad_total  INT
+    cantidad_total  VARCHAR(50)            -- Debería ser INT pero contiene basura como "Diez"
 );
 
 -- -----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ CREATE TABLE Inventario_Sedes (
 --   Sin FK hacia usuarios ni libros.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Reseñas_Usuarios (
-    usuario_id    INT,
+    usuario_id    VARCHAR(50),             -- Contiene "Usuario_Desconocido"
     libro_titulo  VARCHAR(255),
     comentario    TEXT,
     calificacion  VARCHAR(10)              -- Debería ser INT CHECK (1..5)

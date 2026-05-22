@@ -33,11 +33,13 @@ def normalize_from_dirty(conn) -> dict:
 
         cur.execute('SELECT nombre_usuario, correo_usuario, libros_prestados, fecha_salida, estado_prestamo FROM "Prestamos_Crudos"')
         for user_name, email, borrowed, checkout, status in cur.fetchall():
-            # Implementación de la cláusula ON CONFLICT para garantizar la idempotencia de la migración 
-            # y evitar la generación de usuarios duplicados en el nuevo esquema.
+            # Limpieza de correo electrónico mediante expresiones regulares
+            import re
+            valid_email = email if email and re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email) else f"usuario_{stats['users']}@invalido.com"
+            
             cur.execute(
                 "INSERT INTO usuarios(nombre, correo) VALUES (%s,%s) ON CONFLICT (correo) DO UPDATE SET nombre=EXCLUDED.nombre RETURNING id_usuario",
-                (user_name, email),
+                (user_name, valid_email),
             )
             user_id = cur.fetchone()[0]
             stats["users"] += 1
@@ -47,10 +49,20 @@ def normalize_from_dirty(conn) -> dict:
                 cur.execute("SELECT id_libro FROM libros WHERE titulo=%s", (title,))
                 result = cur.fetchone()
                 if result:
-                    return_date = checkout + timedelta(days=10) if status == "DEVUELTO" else None
+                    # Limpieza y coerción de fecha usando datetime (evitando "Sin fecha")
+                    from datetime import datetime
+                    try:
+                        if isinstance(checkout, str):
+                            parsed_checkout = datetime.strptime(checkout.strip(), "%Y-%m-%d").date()
+                        else:
+                            parsed_checkout = checkout
+                    except Exception:
+                        parsed_checkout = datetime.today().date()
+                        
+                    return_date = parsed_checkout + timedelta(days=10) if status == "DEVUELTO" else None
                     cur.execute(
                         "INSERT INTO prestamos(id_usuario, id_libro, fecha_salida, fecha_devolucion, estado) VALUES (%s,%s,%s,%s,%s)",
-                        (user_id, result[0], checkout, return_date, status),
+                        (user_id, result[0], parsed_checkout, return_date, status),
                     )
                     stats["loans"] += 1
 
@@ -61,7 +73,14 @@ def normalize_from_dirty(conn) -> dict:
             cur.execute("SELECT id_libro FROM libros WHERE titulo=%s", (title,))
             book = cur.fetchone()
             if book:
-                cur.execute("INSERT INTO inventario(id_sede, id_libro, cantidad_total) VALUES (%s,%s,%s) ON CONFLICT (id_sede,id_libro) DO UPDATE SET cantidad_total=EXCLUDED.cantidad_total", (branch_id, book[0], quantity))
+                # Coerción de tipo para cantidad_total (evitando textos como "Diez" o negativos)
+                try:
+                    qty = int(quantity)
+                    qty = max(0, qty)
+                except (ValueError, TypeError):
+                    qty = 0
+                    
+                cur.execute("INSERT INTO inventario(id_sede, id_libro, cantidad_total) VALUES (%s,%s,%s) ON CONFLICT (id_sede,id_libro) DO UPDATE SET cantidad_total=EXCLUDED.cantidad_total", (branch_id, book[0], qty))
                 stats["inventory"] += 1
 
         cur.execute('SELECT usuario_id, libro_titulo, comentario, calificacion FROM "Reseñas_Usuarios"')
@@ -71,6 +90,13 @@ def normalize_from_dirty(conn) -> dict:
             cur.execute("SELECT id_usuario FROM usuarios ORDER BY id_usuario OFFSET %s LIMIT 1", (max(int(user_raw_id) - 1, 0),))
             user = cur.fetchone()
             if book and user:
-                cur.execute("INSERT INTO resenas(id_usuario, id_libro, comentario, calificacion) VALUES (%s,%s,%s,%s) ON CONFLICT (id_usuario,id_libro) DO NOTHING", (user[0], book[0], comment, int(rating)))
+                # Coerción de calificación caótica ("5/5", "Cinco", nulos)
+                try:
+                    rtg = int(str(rating).split("/")[0]) if rating else 3
+                except ValueError:
+                    rtg = 3
+                rtg = max(1, min(5, rtg))
+                
+                cur.execute("INSERT INTO resenas(id_usuario, id_libro, comentario, calificacion) VALUES (%s,%s,%s,%s) ON CONFLICT (id_usuario,id_libro) DO NOTHING", (user[0], book[0], comment, rtg))
                 stats["reviews"] += 1
     return stats
