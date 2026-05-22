@@ -120,12 +120,13 @@ def load_excel(conn, xlsx_path: str | Path) -> dict[str, int]:
                     values.append(None)
 
                 try:
+                    cur.execute("SAVEPOINT load_row")
                     cur.execute(sql, values)
+                    cur.execute("RELEASE SAVEPOINT load_row")
                     rows_inserted += 1
                 except Exception as exc:
+                    cur.execute("ROLLBACK TO SAVEPOINT load_row")
                     # Registrar la fila problemática sin abortar la carga completa.
-                    # La transacción principal permanece abierta; el orquestador
-                    # decidirá si hacer commit o rollback al finalizar la fase.
                     logger.warning(
                         "Fila omitida en hoja '%s' (error: %s) — valores: %s",
                         sheet_name, exc, values,

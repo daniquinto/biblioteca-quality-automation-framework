@@ -26,6 +26,9 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
     created_titles: list[str] = []
     
     with conn.cursor() as cur:
+        cur.execute('SELECT COALESCE(MAX(id_registro), 0) FROM "Biblioteca_Data"')
+        max_id = cur.fetchone()[0]
+
         for i in range(total_records):
             title = random_title(fake)
             created_titles.append(title)
@@ -46,24 +49,31 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             titulo_ruido = inject_noise(title)
             autor_ruido = inject_noise(fake.name())
             
-            # Simular id_registro duplicado inyectándolo explícitamente a veces
-            id_registro = i + 1 if random.random() > 0.1 else random.randint(1, i or 1)
+            # Simular id_registro duplicado inyectándolo explícitamente a veces (basado en el max_id actual)
+            current_id = max_id + i + 1
+            id_registro = current_id if random.random() > 0.1 else random.randint(max_id + 1, current_id)
             
-            cur.execute(
-                'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, '
-                'categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
-                (id_registro, titulo_ruido, autor_ruido, f"{category}|{description}", fake.company(), pub_date),
-            )
-            inserted["Biblioteca_Data"] += 1
-            
-            # Ocasionalmente duplicar fila entera
-            if random.random() < 0.05:
+            cur.execute("SAVEPOINT populate_row")
+            try:
                 cur.execute(
                     'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, '
                     'categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
                     (id_registro, titulo_ruido, autor_ruido, f"{category}|{description}", fake.company(), pub_date),
                 )
                 inserted["Biblioteca_Data"] += 1
+                
+                # Ocasionalmente duplicar fila entera
+                if random.random() < 0.05:
+                    cur.execute(
+                        'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, '
+                        'categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
+                        (id_registro, titulo_ruido, autor_ruido, f"{category}|{description}", fake.company(), pub_date),
+                    )
+                    inserted["Biblioteca_Data"] += 1
+                
+                cur.execute("RELEASE SAVEPOINT populate_row")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT populate_row")
 
             # --- ANOMALÍAS EN Prestamos_Crudos ---
             borrowed_books = ", ".join(random.sample(created_titles, k=min(len(created_titles), random.randint(1, 3))))
@@ -83,7 +93,7 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             elif random.random() < 0.1:
                 str_date = raw_date.strftime("%d/%m/%Y")
             
-            id_prestamo = i + 1 if random.random() > 0.05 else i # Duplicate IDs
+            id_prestamo = max_id + i + 1 if random.random() > 0.05 else max_id + i # Duplicate IDs
                 
             cur.execute(
                 'INSERT INTO "Prestamos_Crudos" (id_prestamo, nombre_usuario, correo_usuario, '
@@ -121,7 +131,7 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             inserted["Inventario_Sedes"] += 1
 
             # --- ANOMALÍAS EN Reseñas_Usuarios ---
-            usuario_id = str(i + 1)
+            usuario_id = str(max_id + i + 1)
             if random.random() < 0.1:
                 usuario_id = "Usuario_Desconocido"
             elif random.random() < 0.1:

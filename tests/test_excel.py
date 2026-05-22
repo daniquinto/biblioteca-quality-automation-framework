@@ -29,7 +29,7 @@ def test_load_excel_success(mock_openpyxl, mock_exists):
     stats = load_excel(mock_conn, "dummy.xlsx")
 
     assert stats["Biblioteca_Data"] == 2
-    assert mock_cursor.execute.call_count == 2
+    assert mock_cursor.execute.call_count == 6
 
 
 def test_load_excel_file_not_found():

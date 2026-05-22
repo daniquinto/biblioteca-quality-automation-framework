@@ -60,9 +60,9 @@ def main():
 
     with pg_connection() as conn:
         # Fase 2: Preparación del entorno Legacy. 
-        # (El esquema legacy se crea automáticamente al iniciar el contenedor PostgreSQL
-        # mediante el script mapeado en /docker-entrypoint-initdb.d/01_legacy_dirty_schema.sql)
-        logger.info("Esquema legacy precargado en el volumen de PostgreSQL")
+        # Aseguramos explícitamente que las tablas existan antes de inyectar datos
+        logger.info("Asegurando que el esquema legacy exista en PostgreSQL...")
+        execute_sql_file(conn, SQL_DIR / "01_legacy_dirty_schema.sql")
 
         # Fase 3a: Ingesta de datos reales desde Excel (opcional).
         # Si EXCEL_PATH está definido, se cargan filas reales y sucias antes del Faker,

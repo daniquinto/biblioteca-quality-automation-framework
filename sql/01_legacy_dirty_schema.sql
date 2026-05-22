@@ -12,17 +12,17 @@
 -- =============================================================================
 
 -- Limpiar si ya existen (para re-ejecuciones)
-DROP TABLE IF EXISTS Reseñas_Usuarios  CASCADE;
-DROP TABLE IF EXISTS Inventario_Sedes  CASCADE;
-DROP TABLE IF EXISTS Prestamos_Crudos  CASCADE;
-DROP TABLE IF EXISTS Biblioteca_Data   CASCADE;
+DROP TABLE IF EXISTS "Reseñas_Usuarios"  CASCADE;
+DROP TABLE IF EXISTS "Inventario_Sedes"  CASCADE;
+DROP TABLE IF EXISTS "Prestamos_Crudos"  CASCADE;
+DROP TABLE IF EXISTS "Biblioteca_Data"   CASCADE;
 
 -- -----------------------------------------------------------------------------
 -- Tabla 1: Biblioteca_Data
 --   Viola 1FN: categoria_y_descripcion combina dos atributos en uno solo.
 --   Tipo incorrecto: fecha_publicacion almacena fechas como texto libre.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Biblioteca_Data (
+CREATE TABLE "Biblioteca_Data" (
     id_registro           SERIAL PRIMARY KEY,
     titulo_libro          VARCHAR(255),
     autor_nombre          VARCHAR(255),
@@ -36,7 +36,7 @@ CREATE TABLE Biblioteca_Data (
 --   Viola 1FN: libros_prestados es una lista separada por comas.
 --   Sin integridad referencial con usuarios ni libros.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Prestamos_Crudos (
+CREATE TABLE "Prestamos_Crudos" (
     id_prestamo     INT,                   -- Sin PK declarada
     nombre_usuario  VARCHAR(255),
     correo_usuario  VARCHAR(255),
@@ -50,7 +50,7 @@ CREATE TABLE Prestamos_Crudos (
 --   Sin PK. Mezcla atributos de sede y libro (redundancia).
 --   Dependencia transitiva: libro_asociado depende de sede, no de una entidad propia.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Inventario_Sedes (
+CREATE TABLE "Inventario_Sedes" (
     sede_nombre     VARCHAR(100),
     ubicacion_sede  VARCHAR(255),
     libro_asociado  VARCHAR(255),
@@ -62,7 +62,7 @@ CREATE TABLE Inventario_Sedes (
 --   calificacion almacenada como VARCHAR en lugar de INT/NUMERIC.
 --   Sin FK hacia usuarios ni libros.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Reseñas_Usuarios (
+CREATE TABLE "Reseñas_Usuarios" (
     usuario_id    VARCHAR(50),             -- Contiene "Usuario_Desconocido"
     libro_titulo  VARCHAR(255),
     comentario    TEXT,
