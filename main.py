@@ -115,7 +115,7 @@ def main():
         # Fase 6.5: Exportación a Excel.
         # El taller pide un informe en Excel de los datos normalizados.
         logger.info("Exportando informe de datos normalizados a Excel...")
-        export_path = ROOT / "data" / "biblioteca_normalizada.xlsx"
+        export_path = ROOT / "mongo_exports" / "biblioteca_normalizada.xlsx"
         export_normalized_to_excel(conn, export_path)
         logger.info("Exportación completada: %s", export_path)
 
