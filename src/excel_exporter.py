@@ -8,6 +8,7 @@ negrita y las columnas se auto‑ajustan al contenido.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import date, datetime
 from pathlib import Path
@@ -66,7 +67,9 @@ def _excel_value_and_format(header: str, value):
 
     header = header.lower()
     if "correo" in header:
-        return str(value).strip().lower(), "@"
+        normalized_email = str(value).strip().lower()
+        hashed_email = hashlib.sha256(normalized_email.encode()).hexdigest()
+        return hashed_email, None
 
     if header.startswith("fecha") and isinstance(value, datetime):
         if header != "fecha_resena":

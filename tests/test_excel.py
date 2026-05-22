@@ -1,3 +1,4 @@
+import hashlib
 import pytest
 from datetime import datetime, date
 from unittest.mock import MagicMock, patch
@@ -103,8 +104,8 @@ def test_excel_value_and_format_none_value():
 
 def test_excel_value_and_format_email_text():
     value, number_format = _excel_value_and_format("correo", "  USER@EMAIL.COM ")
-    assert value == "user@email.com"
-    assert number_format == "@"
+    assert value == hashlib.sha256("user@email.com".encode()).hexdigest()
+    assert number_format is None
 
 
 def test_auto_adjust_width():
