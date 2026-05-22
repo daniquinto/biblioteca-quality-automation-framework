@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from src.migrator import migrate_to_mongo, _mask_email
+from src.migrator import migrate_to_mongo
 
 
 @patch("src.migrator.load_json")

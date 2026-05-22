@@ -5,7 +5,7 @@ load_json, y el logger de utils.
 """
 import json
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock
 from src.normalizer import normalize_from_dirty, _split_category
 from src.utils import load_json, setup_logger, execute_sql_file
 

@@ -123,7 +123,6 @@ class TestMultaIntegracionPostgres:
             pytest.skip("POSTGRES_HOST no configurado — test de integración omitido.")
         try:
             from src.db import pg_connection
-            import psycopg2
             with pg_connection() as conn:
                 self.conn = conn
                 yield conn
