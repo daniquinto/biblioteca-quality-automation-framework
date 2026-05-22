@@ -77,8 +77,14 @@ def test_export_normalized_to_excel(mock_openpyxl):
 
 def test_excel_value_and_format_date_without_time():
     value, number_format = _excel_value_and_format("fecha_salida", datetime(2024, 1, 2, 8, 30))
-    assert str(value) == "2024-01-02"
-    assert number_format == "yyyy-mm-dd"
+    assert value == "02/01/2024"
+    assert number_format is None
+
+
+def test_excel_value_and_format_fecha_resena_with_time():
+    value, number_format = _excel_value_and_format("fecha_resena", datetime(2024, 1, 2, 8, 30, 45))
+    assert value == "02/01/2024 08:30:45"
+    assert number_format is None
 
 
 def test_excel_value_and_format_email_text():

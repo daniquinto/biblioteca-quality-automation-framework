@@ -70,11 +70,11 @@ def _excel_value_and_format(header: str, value):
 
     if header.startswith("fecha") and isinstance(value, datetime):
         if header != "fecha_resena":
-            return value.date(), "dd/mm/yyyy"
-        return value, "dd/mm/yyyy hh:mm:ss"
+            return value.strftime("%d/%m/%Y"), None
+        return value.strftime("%d/%m/%Y %H:%M:%S"), None
 
     if header.startswith("fecha") and isinstance(value, date):
-        return value, "dd/mm/yyyy"
+        return value.strftime("%d/%m/%Y"), None
 
     return value, None
 
