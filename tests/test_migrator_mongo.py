@@ -1,43 +1,58 @@
-from unittest.mock import MagicMock
-from src.migrator import migrate_to_mongo
+from unittest.mock import MagicMock, patch
+from src.migrator import migrate_to_mongo, _mask_email
 
-def test_migrate_to_mongo_success():
-    """Valida el proceso de transformación y carga hacia NoSQL."""
+
+@patch("src.migrator.load_json")
+def test_migrate_to_mongo_masks_email(mock_load_json):
+    """Valida que los emails de usuarios se enmascaren antes de insertar en MongoDB."""
+    mock_load_json.return_value = {}
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
-    # Mockear las lecturas de base de datos
-    # 1. Usuarios, 2. Préstamos de ese usuario
+    # Simula: libros, usuarios, préstamos, inventario
     mock_cursor.fetchall.side_effect = [
-        [(1, "Juan", "juan@test.com")], # Usuarios
-        [(101, "Libro A", "2023-01-01", "2023-01-15", "DEVUELTO")], # Préstamos del usuario 1
+        [],  # books (SELECT con GROUP BY)
+        [(1, "Juan Pérez", "juan@test.com")],   # usuarios
+        [],  # préstamos
+        [],  # inventario
     ]
 
     mock_db = MagicMock()
-    mock_collection = MagicMock()
-    mock_db.__getitem__.return_value = mock_collection
+    mock_db.books = MagicMock()
+    mock_db.users = MagicMock()
+    mock_db.loans = MagicMock()
+    mock_db.inventory = MagicMock()
 
-    migrate_to_mongo(mock_conn, mock_db, "dummy_mapping.json")
+    stats = migrate_to_mongo(mock_conn, mock_db, "dummy_mapping.json")
 
-    assert mock_collection.insert_one.call_count == 1
-    
-    # Validar que se enmascaró el email
-    args, _ = mock_collection.insert_one.call_args
-    doc = args[0]
-    assert doc["nombre"] == "Juan"
-    assert doc["email"] != "juan@test.com" # Debe estar enmascarado
-    assert len(doc["prestamos"]) == 1
+    # Debe haber intentado insertar usuarios
+    assert mock_db.users.insert_many.called
+    inserted_users = mock_db.users.insert_many.call_args[0][0]
+    assert len(inserted_users) == 1
+    assert inserted_users[0]["email"] != "juan@test.com"   # PII enmascarado
+    assert inserted_users[0]["name"] == "Juan Pérez"
+    assert stats["users"] == 1
 
-def test_migrate_to_mongo_empty():
-    """Valida el comportamiento si no hay usuarios."""
+
+@patch("src.migrator.load_json")
+def test_migrate_to_mongo_empty_tables(mock_load_json):
+    """Valida que con tablas vacías no se llame insert_many."""
+    mock_load_json.return_value = {}
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
     mock_cursor.fetchall.return_value = []
 
     mock_db = MagicMock()
-    
+    mock_db.books = MagicMock()
+    mock_db.users = MagicMock()
+    mock_db.loans = MagicMock()
+    mock_db.inventory = MagicMock()
+
     stats = migrate_to_mongo(mock_conn, mock_db, "dummy.json")
-    
-    assert stats["usuarios_migrados"] == 0
+
+    assert stats["books"] == 0
+    assert stats["users"] == 0
+    assert stats["loans"] == 0
+    mock_db.users.insert_many.assert_not_called()

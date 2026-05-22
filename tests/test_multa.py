@@ -119,11 +119,17 @@ class TestMultaIntegracionPostgres:
     @pytest.fixture(autouse=True)
     def db_conn(self):
         """Fixture: abre una conexión real y hace rollback al finalizar el test."""
-        from src.db import pg_connection
-        with pg_connection() as conn:
-            self.conn = conn
-            yield conn
-            conn.rollback()  # Nunca persistir datos de test
+        if not _DB_AVAILABLE:
+            pytest.skip("POSTGRES_HOST no configurado — test de integración omitido.")
+        try:
+            from src.db import pg_connection
+            import psycopg2
+            with pg_connection() as conn:
+                self.conn = conn
+                yield conn
+                conn.rollback()  # Nunca persistir datos de test
+        except Exception:
+            pytest.skip("Base de datos no disponible — test de integración omitido.")
 
     def _insert_prestamo(self, fecha_salida: date, fecha_devolucion: date | None) -> int:
         """
