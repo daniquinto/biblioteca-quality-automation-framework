@@ -50,7 +50,8 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             id_registro = i + 1 if random.random() > 0.1 else random.randint(1, i or 1)
             
             cur.execute(
-                'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
+                'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, '
+                'categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
                 (id_registro, titulo_ruido, autor_ruido, f"{category}|{description}", fake.company(), pub_date),
             )
             inserted["Biblioteca_Data"] += 1
@@ -58,7 +59,8 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             # Ocasionalmente duplicar fila entera
             if random.random() < 0.05:
                 cur.execute(
-                    'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
+                    'INSERT INTO "Biblioteca_Data" (id_registro, titulo_libro, autor_nombre, '
+                    'categoria_y_descripcion, editorial_info, fecha_publicacion) VALUES (%s,%s,%s,%s,%s,%s)',
                     (id_registro, titulo_ruido, autor_ruido, f"{category}|{description}", fake.company(), pub_date),
                 )
                 inserted["Biblioteca_Data"] += 1
@@ -84,14 +86,16 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
             id_prestamo = i + 1 if random.random() > 0.05 else i # Duplicate IDs
                 
             cur.execute(
-                'INSERT INTO "Prestamos_Crudos" (id_prestamo, nombre_usuario, correo_usuario, libros_prestados, fecha_salida, estado_prestamo) VALUES (%s,%s,%s,%s,%s,%s)',
+                'INSERT INTO "Prestamos_Crudos" (id_prestamo, nombre_usuario, correo_usuario, '
+                'libros_prestados, fecha_salida, estado_prestamo) VALUES (%s,%s,%s,%s,%s,%s)',
                 (id_prestamo, fake.name(), email, borrowed_books, str_date, random.choice(STATES)),
             )
             inserted["Prestamos_Crudos"] += 1
             # Duplicar fila entera de préstamo a veces
             if random.random() < 0.05:
                 cur.execute(
-                    'INSERT INTO "Prestamos_Crudos" (id_prestamo, nombre_usuario, correo_usuario, libros_prestados, fecha_salida, estado_prestamo) VALUES (%s,%s,%s,%s,%s,%s)',
+                    'INSERT INTO "Prestamos_Crudos" (id_prestamo, nombre_usuario, correo_usuario, '
+                    'libros_prestados, fecha_salida, estado_prestamo) VALUES (%s,%s,%s,%s,%s,%s)',
                     (id_prestamo, fake.name(), email, borrowed_books, str_date, random.choice(STATES)),
                 )
                 inserted["Prestamos_Crudos"] += 1
@@ -110,7 +114,8 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
                 cantidad_total = None # nulo
                 
             cur.execute(
-                'INSERT INTO "Inventario_Sedes" (sede_nombre, ubicacion_sede, libro_asociado, cantidad_total) VALUES (%s,%s,%s,%s)',
+                'INSERT INTO "Inventario_Sedes" (sede_nombre, ubicacion_sede, libro_asociado, '
+                'cantidad_total) VALUES (%s,%s,%s,%s)',
                 (sede_nombre, fake.address().replace("\n", ", "), title, cantidad_total),
             )
             inserted["Inventario_Sedes"] += 1
@@ -128,7 +133,8 @@ def populate_dirty_tables(conn, total_records: int = 250, locale: str = "es_CO")
                 calificacion = random.choice(calificaciones_caoticas)
                 
             cur.execute(
-                'INSERT INTO "Reseñas_Usuarios" (usuario_id, libro_titulo, comentario, calificacion) VALUES (%s,%s,%s,%s)',
+                'INSERT INTO "Reseñas_Usuarios" (usuario_id, libro_titulo, comentario, calificacion) '
+                'VALUES (%s,%s,%s,%s)',
                 (usuario_id, title, fake.sentence(nb_words=12), calificacion),
             )
             inserted["Reseñas_Usuarios"] += 1
