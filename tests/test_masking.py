@@ -10,7 +10,6 @@ Criterios:
 """
 
 import hashlib
-import pytest
 from src.migrator import _mask_email
 
 

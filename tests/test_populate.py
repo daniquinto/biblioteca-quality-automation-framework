@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 from src.populate_legacy import populate_dirty_tables
 

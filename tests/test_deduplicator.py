@@ -9,8 +9,7 @@ Los datos son elegidos para ejercitar los tres escenarios clave:
   C. Un registro ya eliminado  → no se procesa dos veces (doble delete).
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 from src.deduplicator import deduplicate_biblioteca, _normalize_text, _blocking_key, SIMILARITY_THRESHOLD
 
 
@@ -121,11 +120,10 @@ class TestDeduplicateBiblioteca:
         ]
         conn, cur = _make_conn(records)
 
-        report = deduplicate_biblioteca(conn, threshold=SIMILARITY_THRESHOLD)
+        deduplicate_biblioteca(conn, threshold=SIMILARITY_THRESHOLD)
 
-        # Solo deben eliminarse ids únicos — nunca el mismo id dos veces
-        delete_ids = [c.args[1][0] for c in cur.execute.call_args_list
-                      if "DELETE" in str(c)]
+        # Se espera que se borre el registro 2
+        delete_ids = [c.args[1][0] for c in cur.execute.call_args_list if "DELETE" in str(c)]
         assert len(delete_ids) == len(set(delete_ids)), "Se eliminó el mismo id más de una vez"
 
     def test_returns_correct_stats_keys(self):
@@ -167,7 +165,7 @@ class TestDeduplicateBiblioteca:
         report = deduplicate_biblioteca(conn, threshold=SIMILARITY_THRESHOLD)
 
         # Con autores tan distintos la similitud combinada baja por debajo del umbral
-        delete_calls = [c for c in cur.execute.call_args_list if "DELETE" in str(c)]
+        
         # Si el test falla aquí significa que el umbral del 85% combinado no protege este caso;
         # en ese escenario el taller acepta ajustar el threshold.
         # Lo importante es que la lógica de autor+titulo esté siendo ejercitada.

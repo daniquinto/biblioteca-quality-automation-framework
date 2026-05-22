@@ -165,7 +165,6 @@ def deduplicate_biblioteca(conn, threshold: int = SIMILARITY_THRESHOLD) -> dict:
                 if sim >= threshold:
                     duplicates_found += 1
                     # 4. El id menor es el Registro Maestro; el id mayor se elimina
-                    master_id = min(id1, id2)
                     duplicate_id = max(id1, id2)
 
                     logger.debug(

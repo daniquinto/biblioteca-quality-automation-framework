@@ -22,7 +22,7 @@ def test_pg_connection_exception(mock_psycopg2):
     mock_psycopg2.connect.return_value = mock_conn
 
     with pytest.raises(ValueError):
-        with pg_connection() as conn:
+        with pg_connection():
             raise ValueError("Test Error")
 
     assert mock_conn.rollback.called

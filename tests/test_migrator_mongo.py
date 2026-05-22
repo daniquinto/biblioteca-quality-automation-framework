@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from src.migrator import migrate_to_mongo
 
 def test_migrate_to_mongo_success():
@@ -19,7 +18,7 @@ def test_migrate_to_mongo_success():
     mock_collection = MagicMock()
     mock_db.__getitem__.return_value = mock_collection
 
-    stats = migrate_to_mongo(mock_conn, mock_db, "dummy_mapping.json")
+    migrate_to_mongo(mock_conn, mock_db, "dummy_mapping.json")
 
     assert mock_collection.insert_one.call_count == 1
     
