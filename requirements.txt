@@ -8,3 +8,5 @@ pytest-cov>=5.0
 openpyxl>=3.1
 thefuzz>=0.22
 python-Levenshtein>=0.25
+flake8>=7.0
+pylint>=3.0

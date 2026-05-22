@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 from src.db import pg_connection, mongo_database
 from src.populate_legacy import populate_dirty_tables
@@ -117,6 +118,47 @@ def main():
         logger.info("Migración MongoDB completada: %s", mongo_stats)
 
     logger.info("Proceso finalizado correctamente. Revise logs/reporte_calidad.log")
+
+    # Fase 8: Análisis Estático de Código Python.
+    # Se ejecuta al finalizar todas las fases de datos para asegurar que el propio
+    # framework cumple los estándares de calidad de código que predica.
+    logs_dir = ROOT / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    # 8a. flake8 — estándar de pipeline: detecta errores de estilo PEP-8 y bugs evidentes.
+    flake8_report = logs_dir / "flake8_report.txt"
+    flake8_result = subprocess.run(
+        ["flake8", "src/", "--statistics", "--output-file", str(flake8_report)],
+        capture_output=True,
+        text=True,
+    )
+    if flake8_result.returncode == 0:
+        logger.info("flake8: sin violaciones PEP-8. Reporte en %s", flake8_report)
+    else:
+        logger.warning(
+            "flake8: se encontraron advertencias (código %d). Ver %s",
+            flake8_result.returncode, flake8_report,
+        )
+
+    # 8b. pylint — reporte visual con puntuación 0–10 (más llamativo para el taller).
+    pylint_report = logs_dir / "pylint_report.txt"
+    pylint_result = subprocess.run(
+        ["pylint", "src/", "--output-format=text", f"--output={pylint_report}"],
+        capture_output=True,
+        text=True,
+    )
+    # pylint usa código de salida bit-a-bit (0=OK, 1=fatal, 2=error, 4=warn, 8=refactor, 16=convention)
+    # Códigos distintos de 32 (uso) indican que se produjo algún reporte.
+    score_line = next(
+        (line for line in pylint_result.stdout.splitlines() if "Your code has been rated" in line),
+        None,
+    )
+    if score_line:
+        logger.info("pylint: %s. Ver %s", score_line.strip(), pylint_report)
+    else:
+        logger.info("pylint: análisis completado. Ver %s", pylint_report)
+
+    logger.info("Análisis estático completado. Reportes en logs/")
 
 if __name__ == "__main__":
     main()

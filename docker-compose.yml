@@ -23,7 +23,35 @@ services:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
+    # Healthcheck requerido para que el servicio app pueda usar
+    # depends_on con condition: service_healthy y no arrancar antes que Mongo esté listo.
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build: .
+    container_name: biblioteca_app
+    env_file:
+      - .env
+    environment:
+      # Sobreescribir hosts para que apunten a los servicios Docker en vez de localhost
+      POSTGRES_HOST: postgres
+      MONGO_URI: mongodb://mongo:27017
+    depends_on:
+      postgres:
+        condition: service_healthy   # Espera hasta que pg_isready retorne OK
+      mongo:
+        condition: service_healthy   # Espera hasta que mongosh ping retorne OK
+    volumes:
+      # Volumen compartido para persistir los reportes generados por flake8/pylint
+      - logs_data:/app/logs
+    restart: "no"   # El pipeline corre una vez y termina; no reiniciar en exit 0
 
 volumes:
   pgdata:
   mongodata:
+  logs_data:
