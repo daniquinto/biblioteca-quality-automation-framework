@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date, datetime
 from pathlib import Path
 from .utils import load_json
@@ -11,6 +12,38 @@ def _json_safe(value):
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     return value
+
+
+def _mask_email(email: str) -> str:
+    """
+    Enmascaramiento de datos personales (PII) antes de la migración a MongoDB.
+    Aplica el principio de minimización de datos: el correo nunca se almacena
+    en texto claro en el destino documental.
+
+    Opción A — Máscara parcial (activa): preserva la forma del correo para
+    trazabilidad en entornos de desarrollo/demo sin exponer el dato real.
+    Ejemplo: 'maria.lopez@correo.com' → 'm*********z@correo.com'
+
+    Opción B — SHA-256 (comentada): irreversible y apta para producción;
+    sustituye completamente el correo por su hash hexadecimal de 64 caracteres.
+    Descomentar y comentar la Opción A para activarla.
+    """
+    if not email or "@" not in email:
+        # Correos nulos o malformados se hashean directamente para no propagar el dato
+        return hashlib.sha256((email or "").encode()).hexdigest()
+
+    # --- Opción A: Máscara parcial ---
+    local, domain = email.split("@", 1)
+    if len(local) <= 2:
+        # Correos muy cortos: enmascarar todo el local excepto el primero
+        masked_local = local[0] + "*" * max(len(local) - 1, 3)
+    else:
+        # Conservar primer y último carácter; rellenar el centro con asteriscos
+        masked_local = local[0] + "*" * (len(local) - 2) + local[-1]
+    return f"{masked_local}@{domain}"
+
+    # --- Opción B: SHA-256 (producción) ---
+    # return hashlib.sha256(email.encode()).hexdigest()
 
 def migrate_to_mongo(conn, mongo_db, mapping_path: Path) -> dict:
     """
@@ -62,7 +95,9 @@ def migrate_to_mongo(conn, mongo_db, mapping_path: Path) -> dict:
 
         # Migración de Usuarios: Mantenemos la estructura plana por simplicidad de búsqueda
         cur.execute("SELECT id_usuario, nombre, correo FROM usuarios")
-        users = [{"user_id": r[0], "name": r[1], "email": r[2]} for r in cur.fetchall()]
+        # El correo se enmascara antes de persistir en MongoDB para cumplir con el
+        # principio de minimización de datos (PII protection) en el destino documental.
+        users = [{"user_id": r[0], "name": r[1], "email": _mask_email(r[2])} for r in cur.fetchall()]
         if users:
             mongo_db.users.insert_many(users)
         stats["users"] = len(users)

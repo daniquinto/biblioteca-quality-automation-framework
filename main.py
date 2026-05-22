@@ -7,6 +7,7 @@ from src.normalizer import normalize_from_dirty
 from src.migrator import migrate_to_mongo
 from src.utils import ROOT, execute_sql_file, load_json, setup_logger
 from src.excel_loader import load_excel
+from src.deduplicator import deduplicate_biblioteca
 
 # Definición de rutas base para asegurar la portabilidad del framework en diferentes entornos
 SQL_DIR = ROOT / "sql"
@@ -87,6 +88,15 @@ def main():
             "Reporte de calidad legacy: total=%s, inválidos=%s",
             quality_report["total_records"], quality_report["invalid_records"],
         )
+
+        # Fase 4.5: Deduplicación por Similitud Difusa (Fuzzy Matching).
+        # Elimina registros casi-duplicados de Biblioteca_Data usando fuzz.ratio()
+        # con blocking por primera palabra para mantener la complejidad tratable.
+        # Debe correr después de la auditoría de calidad (Fase 4) y antes de la
+        # normalización (Fase 5) para que el ETL opere sobre datos ya deduplicados.
+        logger.info("Ejecutando deduplicación fuzzy sobre Biblioteca_Data")
+        dedup_report = deduplicate_biblioteca(conn)
+        logger.info("Deduplicación completada: %s", dedup_report)
 
         # Fase 5: Normalización 3FN.
         # Se aplican los scripts de corrección y se transforman los datos hacia el nuevo modelo.
