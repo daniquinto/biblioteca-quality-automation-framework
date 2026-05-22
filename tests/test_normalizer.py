@@ -6,7 +6,13 @@ load_json, y el logger de utils.
 import json
 import pytest
 from unittest.mock import MagicMock
-from src.normalizer import normalize_from_dirty, _split_category
+from src.normalizer import (
+    normalize_from_dirty,
+    _clean_text,
+    _normalize_email,
+    _normalize_loan_status,
+    _split_category,
+)
 from src.utils import load_json, setup_logger, execute_sql_file
 
 
@@ -40,6 +46,35 @@ def test_split_category_multiple_pipes():
     cat, desc = _split_category("Novela|Drama|Clásico")
     assert cat == "Novela"
     assert desc == "Drama|Clásico"
+
+
+@pytest.mark.parametrize(
+    ("raw_status", "expected"),
+    [
+        ("Devuelto", "DEVUELTO"),
+        ("  devuelto ", "DEVUELTO"),
+        ("Pendiente", "ACTIVO"),
+        ("PENDIENTE", "ACTIVO"),
+        ("Atrasado", "VENCIDO"),
+        ("   atrasado  \t", "VENCIDO"),
+        (None, "ACTIVO"),
+        ("Estado raro", "ACTIVO"),
+    ],
+)
+def test_normalize_loan_status(raw_status, expected):
+    assert _normalize_loan_status(raw_status) == expected
+
+
+def test_clean_text_collapses_noise_and_title_cases():
+    assert _clean_text("   GABRIEL GARCÍA MÁRQUEZ  \t ", title_case=True) == "Gabriel García Márquez"
+
+
+def test_normalize_email_repairs_at_noise():
+    assert _normalize_email("ana.mar_libros_at_email.com", "Ana Martínez") == "ana.mar_libros@email.com"
+
+
+def test_normalize_email_uses_stable_name_fallback():
+    assert _normalize_email(None, "María García") == "maria.garcia@sin-correo.local"
 
 
 # ─── Tests de normalize_from_dirty ────────────────────────────────────────────
@@ -88,9 +123,9 @@ def test_normalize_from_dirty_user_invalid_email():
     )
     stats = normalize_from_dirty(conn)
     assert stats["users"] == 1
-    # El correo insertado debe contener @invalido.com
+    # El correo insertado debe usar fallback estable por nombre.
     calls = [str(c) for c in cur.execute.call_args_list]
-    assert any("@invalido.com" in c for c in calls)
+    assert any("juan@sin-correo.local" in c for c in calls)
 
 
 def test_normalize_from_dirty_inventory_text_quantity():

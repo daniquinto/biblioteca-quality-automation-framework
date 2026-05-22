@@ -83,8 +83,7 @@ biblioteca_quality_framework/
 │   └── mapping_mongo.json       # Mapeo de colecciones Relacional → NoSQL
 │
 ├── data/
-│   ├── biblioteca.xlsx          # Fuente de datos real (opcional)
-│   └── biblioteca_normalizada.xlsx  # Reporte de salida generado por el pipeline
+│   └── Gestion_Biblioteca_Datos_Sucios_Para_Limpiar.xlsx  # Fuente real por defecto
 │
 ├── logs/
 │   ├── reporte_calidad.log      # Log transaccional del pipeline
@@ -138,8 +137,8 @@ El orquestador `main.py` ejecuta las siguientes fases de forma secuencial e idem
 | Fase | Descripción | Módulo |
 |:---:|---|---|
 | **1** | Inicialización del esquema *Legacy* vía volumen Docker | `sql/01_legacy_dirty_schema.sql` |
-| **2** | Ingesta de datos reales desde `biblioteca.xlsx` | `excel_loader.py` |
-| **3** | Generación de datos sintéticos caóticos con Faker (250 registros) | `populate_legacy.py` |
+| **2** | Ingesta de datos reales desde `data/Gestion_Biblioteca_Datos_Sucios_Para_Limpiar.xlsx` | `excel_loader.py` |
+| **3** | Generación opcional de datos sintéticos con Faker (`TOTAL_RECORDS>0`) | `populate_legacy.py` |
 | **4** | Auditoría de calidad de datos crudos contra reglas JSON | `quality_validator.py` |
 | **5** | Deduplicación por similitud difusa (Fuzzy Matching ≥85%) | `deduplicator.py` |
 | **6** | Normalización 3FN: coerción de tipos, Stored Procedures | `normalizer.py` |

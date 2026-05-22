@@ -58,6 +58,23 @@ def _build_insert(table: str, columns: list[str]) -> str:
     return f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
 
 
+def _column_indexes(header: tuple[Any, ...] | None, expected_cols: list[str]) -> list[int]:
+    """Obtiene las posiciones de las columnas esperadas usando el encabezado."""
+    header_map = {
+        str(column).strip(): index
+        for index, column in enumerate(header or ())
+        if column is not None
+    }
+    if all(column in header_map for column in expected_cols):
+        return [header_map[column] for column in expected_cols]
+
+    logger.warning(
+        "Encabezado incompleto o inesperado (%s). Se usará mapeo posicional.",
+        header,
+    )
+    return list(range(len(expected_cols)))
+
+
 def load_excel(conn, xlsx_path: str | Path) -> dict[str, int]:
     """
     Carga cada hoja del archivo Excel en la tabla legacy correspondiente.
@@ -101,23 +118,21 @@ def load_excel(conn, xlsx_path: str | Path) -> dict[str, int]:
             sql = _build_insert(table_name, expected_cols)
 
             rows_inserted = 0
-            header_skipped = False
+            rows = sheet.iter_rows(values_only=True)
+            header = next(rows, None)
+            indexes = _column_indexes(header, expected_cols)
 
-            for row in sheet.iter_rows(values_only=True):
-                # Omitir la primera fila de encabezado
-                if not header_skipped:
-                    header_skipped = True
-                    continue
-
+            for row in rows:
                 # Omitir filas completamente vacías (filas en blanco del Excel)
                 if all(cell is None for cell in row):
                     continue
 
-                # Recortar o rellenar la fila para que coincida con el número
-                # de columnas esperadas, sin alterar los valores existentes.
-                values: list[Any] = list(row[:len(expected_cols)])
-                while len(values) < len(expected_cols):
-                    values.append(None)
+                # Tomar valores por nombre de columna. Esto evita desplazamientos
+                # cuando el Excel trae columnas extra, como id_registro.
+                values: list[Any] = [
+                    row[index] if index < len(row) else None
+                    for index in indexes
+                ]
 
                 try:
                     cur.execute("SAVEPOINT load_row")

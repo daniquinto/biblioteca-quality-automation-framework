@@ -1,7 +1,8 @@
 import pytest
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 from src.excel_loader import load_excel
-from src.excel_exporter import export_normalized_to_excel
+from src.excel_exporter import _excel_value_and_format, export_normalized_to_excel
 
 
 @patch("pathlib.Path.exists", return_value=True)
@@ -20,16 +21,29 @@ def test_load_excel_success(mock_openpyxl, mock_exists):
     mock_wb.__getitem__.return_value = mock_sheet
 
     # values_only=True devuelve tuplas directamente
-    mock_sheet.iter_rows.return_value = [
-        ("titulo_libro", "autor_nombre", "categoria_y_descripcion", "editorial_info", "fecha_publicacion"),
-        ("T1", "A1", "C1|D1", "E1", "2020-01-01"),
-        ("T2", "A2", "C2|D2", "E2", "2021-05-10"),
-    ]
+    mock_sheet.iter_rows.return_value = iter([
+        (
+            "id_registro",
+            "titulo_libro",
+            "autor_nombre",
+            "categoria_y_descripcion",
+            "editorial_info",
+            "fecha_publicacion",
+        ),
+        (1, "T1", "A1", "C1|D1", "E1", "2020-01-01"),
+        (2, "T2", "A2", "C2|D2", "E2", "2021-05-10"),
+    ])
 
     stats = load_excel(mock_conn, "dummy.xlsx")
+    insert_calls = [
+        call_args for call_args in mock_cursor.execute.call_args_list
+        if call_args.args[0].startswith("INSERT")
+    ]
 
     assert stats["Biblioteca_Data"] == 2
     assert mock_cursor.execute.call_count == 6
+    assert insert_calls[0].args[1] == ["T1", "A1", "C1|D1", "E1", "2020-01-01"]
+    assert insert_calls[1].args[1] == ["T2", "A2", "C2|D2", "E2", "2021-05-10"]
 
 
 def test_load_excel_file_not_found():
@@ -59,3 +73,15 @@ def test_export_normalized_to_excel(mock_openpyxl):
     assert "out_dummy.xlsx" in str(out_path)
     assert mock_wb.save.called
     assert mock_cursor.execute.call_count == 6  # 6 tablas/vistas
+
+
+def test_excel_value_and_format_date_without_time():
+    value, number_format = _excel_value_and_format("fecha_salida", datetime(2024, 1, 2, 8, 30))
+    assert str(value) == "2024-01-02"
+    assert number_format == "yyyy-mm-dd"
+
+
+def test_excel_value_and_format_email_text():
+    value, number_format = _excel_value_and_format("correo", "  USER@EMAIL.COM ")
+    assert value == "user@email.com"
+    assert number_format == "@"

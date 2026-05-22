@@ -14,6 +14,15 @@ from src.deduplicator import deduplicate_biblioteca
 # Definición de rutas base para asegurar la portabilidad del framework en diferentes entornos
 SQL_DIR = ROOT / "sql"
 CONFIG_DIR = ROOT / "config"
+DATA_DIR = ROOT / "data"
+DEFAULT_EXCEL_PATH = DATA_DIR / "Gestion_Biblioteca_Datos_Sucios_Para_Limpiar.xlsx"
+
+
+def resolve_excel_path() -> Path:
+    """Retorna el Excel legacy a cargar, permitiendo override por variable de entorno."""
+    excel_path = os.getenv("EXCEL_PATH")
+    return Path(excel_path).expanduser() if excel_path else DEFAULT_EXCEL_PATH
+
 
 def run_view_and_function_examples(conn, logger):
     """
@@ -64,24 +73,31 @@ def main():
         logger.info("Asegurando que el esquema legacy exista en PostgreSQL...")
         execute_sql_file(conn, SQL_DIR / "01_legacy_dirty_schema.sql")
 
-        # Fase 3a: Ingesta de datos reales desde Excel (opcional).
-        # Si EXCEL_PATH está definido, se cargan filas reales y sucias antes del Faker,
-        # garantizando que el pipeline de calidad reciba un conjunto de datos mixto
-        # (real + sintético) más representativo de un entorno productivo.
-        excel_path = os.getenv("EXCEL_PATH", "")
-        if excel_path:
+        # Fase 3a: Ingesta de datos reales desde Excel.
+        # Por defecto se usa el archivo entregado en data/. EXCEL_PATH queda como
+        # override para probar otro insumo sin tocar el código.
+        excel_path = resolve_excel_path()
+        excel_loaded = False
+        if excel_path.exists():
             logger.info("Cargando datos reales desde Excel: %s", excel_path)
             excel_stats = load_excel(conn, excel_path)
+            excel_loaded = True
             logger.info("Ingesta Excel completada: %s", excel_stats)
         else:
-            logger.info("EXCEL_PATH no definido — se omite la ingesta desde Excel.")
+            logger.warning("Archivo Excel no encontrado en %s. Se omite la ingesta.", excel_path)
 
-        # Fase 3b: Estrés y Poblamiento. Se utiliza Faker para simular un volumen real
-        # que exponga las ineficiencias del modelo no normalizado.
-        total_records = int(os.getenv("TOTAL_RECORDS", "250"))
-        locale = os.getenv("FAKER_LOCALE", "es_CO")
-        inserted = populate_dirty_tables(conn, total_records=total_records, locale=locale)
-        logger.info("Poblamiento masivo completado: %s", inserted)
+        # Fase 3b: Estrés y Poblamiento sintético.
+        # Si el Excel real cargó correctamente, Faker queda apagado por defecto
+        # para que la exportación normalizada refleje el archivo fuente. Para
+        # mezclar datos sintéticos, definir TOTAL_RECORDS con un valor mayor a 0.
+        faker_default = "0" if excel_loaded else "250"
+        total_records = int(os.getenv("TOTAL_RECORDS", faker_default))
+        if total_records > 0:
+            locale = os.getenv("FAKER_LOCALE", "es_CO")
+            inserted = populate_dirty_tables(conn, total_records=total_records, locale=locale)
+            logger.info("Poblamiento masivo Faker completado: %s", inserted)
+        else:
+            logger.info("Poblamiento Faker omitido; usando únicamente datos del Excel.")
 
         # Fase 4: Auditoría de Calidad Dinámica. 
         # Valida los datos insertados contra las reglas de negocio definidas en JSON.
@@ -182,8 +198,8 @@ def main():
         capture_output=True,
         text=True,
     )
-    
-    # Escribir el reporte en archivo de forma manual porque pytest --cov-report=term no tiene un --output nativo simple para ambos
+
+    # pytest --cov-report=term no tiene un --output nativo simple para ambos streams.
     with open(pytest_report, "w", encoding="utf-8") as f:
         f.write(pytest_result.stdout)
         f.write("\n")
@@ -198,6 +214,7 @@ def main():
         )
 
     logger.info("Análisis estático y pruebas completados. Reportes en logs/")
+
 
 if __name__ == "__main__":
     main()

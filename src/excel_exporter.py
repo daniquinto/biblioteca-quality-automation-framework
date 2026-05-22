@@ -9,6 +9,7 @@ negrita y las columnas se auto‑ajustan al contenido.
 from __future__ import annotations
 
 import logging
+from datetime import date, datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -58,6 +59,26 @@ def _auto_adjust_width(ws: openpyxl.worksheet.worksheet.Worksheet) -> None:
         ws.column_dimensions[column_letter].width = length + 2  # margen extra
 
 
+def _excel_value_and_format(header: str, value):
+    """Retorna valor y formato Excel para tipos sensibles como fechas y correos."""
+    if value is None:
+        return value, None
+
+    header = header.lower()
+    if "correo" in header:
+        return str(value).strip().lower(), "@"
+
+    if header.startswith("fecha") and isinstance(value, datetime):
+        if header != "fecha_resena":
+            return value.date(), "dd/mm/yyyy"
+        return value, "dd/mm/yyyy hh:mm:ss"
+
+    if header.startswith("fecha") and isinstance(value, date):
+        return value, "dd/mm/yyyy"
+
+    return value, None
+
+
 def export_normalized_to_excel(conn, output_path: Path | str) -> Path:
     """Exporta las seis tablas normalizadas a *output_path*.
 
@@ -89,7 +110,10 @@ def export_normalized_to_excel(conn, output_path: Path | str) -> Path:
         # Escribir filas
         for row_idx, row in enumerate(rows, start=2):
             for col_idx, value in enumerate(row, start=1):
-                ws.cell(row=row_idx, column=col_idx, value=value)
+                cell_value, number_format = _excel_value_and_format(headers[col_idx - 1], value)
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+                if number_format:
+                    cell.number_format = number_format
         # Auto‑ajustar ancho de columnas
         _auto_adjust_width(ws)
 
