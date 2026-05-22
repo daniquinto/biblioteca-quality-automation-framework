@@ -104,7 +104,10 @@ def migrate_to_mongo(conn, mongo_db, mapping_path: Path) -> dict:
 
         # Migración de Préstamos: Se mantienen referencias (IDs) en lugar de embeber el libro completo
         # para evitar el crecimiento excesivo del documento del usuario.
-        cur.execute("SELECT id_prestamo, id_usuario, id_libro, fecha_salida, fecha_devolucion, estado FROM prestamos")
+        cur.execute(
+            "SELECT id_prestamo, id_usuario, id_libro, "
+            "fecha_salida, fecha_devolucion, estado FROM prestamos"
+        )
         loans = [
             {
                 "loan_id": r[0], "user_id": r[1], "book_id": r[2],
